@@ -261,7 +261,7 @@ button{font:inherit; color:inherit}
       <p><b>Today</b> is what your current holdings gained or lost from price moves over the last 24 hours, the same way DeBank computes it. Deposits and withdrawals don't count.</p>
       <p><b>Value over time</b> uses Hyperliquid's own account history for HyperCore (spot, perps, vaults). Staked HYPE, HyperEVM and Ethereum are your current balances priced at each past moment, so earlier transfers into those wallets aren't reflected.</p>
       <p><b>Daily up / down</b> uses Hyperliquid's PnL history plus price moves on your other balances, so deposits and withdrawals don't show up as gains or losses.</p>
-      <p>Data: Hyperliquid public API, HyperEVM and Ethereum public nodes. Ethereum covers ETH and common tokens (USDC, USDT, DAI, USDe, WETH, stETH, WBTC, LINK, UNI, AAVE, ENA, ONDO).</p>
+      <p>Data: Hyperliquid public API, HyperEVM and Ethereum public nodes. Ethereum covers ETH and common tokens (USDC, USDT, DAI, USDe, WETH, stETH, WBTC, LINK, UNI, AAVE, ENA, ONDO, RAIL). RAIL is priced from CoinGecko.</p>
     </footer>
   </main>
 </div>
@@ -285,6 +285,7 @@ const ETH_TOKENS = [
   {sym:"AAVE", addr:"0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9", dec:18, src:"AAVE"},
   {sym:"ENA", addr:"0x57e114B691Db790C35207b2e685D4A43181e6061", dec:18, src:"ENA"},
   {sym:"ONDO", addr:"0xfAbA6f8e4a5E8Ab82F62fe7C39859FA577269BE3", dec:18, src:"ONDO"},
+  {sym:"RAIL", addr:"0xe76C6c83af64e4C60245D8C7dE953DF673a7A33D", dec:18, src:"cg:railgun"},
 ];
 const LOCS = {
   "Core spot": "var(--c1)", "Perps margin": "var(--c2)", "Vaults": "var(--c3)",
@@ -402,13 +403,29 @@ async function loadMarket(){
   const hypeIdx = spotMeta.tokens.find(t => t.name === "HYPE")?.index;
   if (hypeIdx != null && !tokenPx[hypeIdx] && perpPx.HYPE) tokenPx[hypeIdx] = {px:perpPx.HYPE.px, prev:perpPx.HYPE.prev, coin:"HYPE", vol:0};
   for (const t of spotMeta.tokens){ if (/^(USDC|USDT0|USDH|USDE|USDHL|FEUSD)$/i.test(t.name) && tokenPx[t.index]) tokenPx[t.index].stable = true; }
-  return {tokens, tokenPx, perpPx, hypeIdx, hypeCoin: tokenPx[hypeIdx]?.coin || "HYPE"};
+  // Tokens not traded on Hyperliquid are priced from CoinGecko's free public API
+  const cgIds = [...new Set(ETH_TOKENS.filter(t => t.src.startsWith("cg:")).map(t => t.src.slice(3)))];
+  const cgPx = {};
+  if (cgIds.length){
+    try {
+      const r = await fetch("https://api.coingecko.com/api/v3/simple/price?ids=" + cgIds.join(",") + "&vs_currencies=usd&include_24hr_change=true");
+      if (r.ok){
+        const j = await r.json();
+        for (const id of cgIds){
+          const px = +j[id]?.usd; const chg = +j[id]?.usd_24h_change;
+          if (px > 0) cgPx[id] = {px, prev: isFinite(chg) ? px / (1 + chg/100) : px};
+        }
+      }
+    } catch {}
+  }
+  return {tokens, tokenPx, perpPx, cgPx, hypeIdx, hypeCoin: tokenPx[hypeIdx]?.coin || "HYPE"};
 }
 
 function priceForSrc(src){
   if (src.kind === "stable") return {px:1, prev:1};
   if (src.kind === "perp") return market.perpPx[src.coin] || null;
   if (src.kind === "spot") return market.tokenPx[src.idx] || null;
+  if (src.kind === "cg") return market.cgPx[src.id] || null;
   return null;
 }
 
@@ -492,8 +509,9 @@ async function loadAccount(){
     if (native && e) add({sym:"ETH", loc:"Ethereum", amt:native, px:e.px, prev:e.prev, src:{kind:"perp", coin:"ETH"}});
     ETH_TOKENS.forEach((tk, i) => {
       const amt = hexToNum(ethRes[i+1], tk.dec); if (!amt) return;
-      const src = tk.src === "stable" ? {kind:"stable"} : {kind:"perp", coin:tk.src};
-      const p = priceForSrc(src); if (!p) return;
+      const src = tk.src === "stable" ? {kind:"stable"} : tk.src.startsWith("cg:") ? {kind:"cg", id:tk.src.slice(3)} : {kind:"perp", coin:tk.src};
+      const p = priceForSrc(src);
+      if (!p){ if (src.kind === "cg") add({sym:tk.sym, loc:"Ethereum", amt, px:0, prev:0, unpriced:true, src:null}); return; }
       add({sym:tk.sym, loc:"Ethereum", amt, px:p.px, prev:p.prev, src});
     });
   }
@@ -521,8 +539,17 @@ async function candles(coin, iv, start){
   const key = coin + "|" + iv + "|" + Math.floor(start / 36e5);
   const hit = candleCache.get(key);
   if (hit && Date.now() - hit.at < 10*60e3) return hit.data;
-  const raw = await info({type:"candleSnapshot", req:{coin, interval:iv, startTime:Math.floor(start), endTime:Date.now()}});
-  const data = (raw || []).map(c => [+c.t, +c.c, +c.T]).sort((a,b) => a[0]-b[0]);
+  let data;
+  if (coin.startsWith("cg:")){
+    const days = Math.min(365, Math.ceil((Date.now() - start) / 864e5) + 1);
+    const r = await fetch("https://api.coingecko.com/api/v3/coins/" + coin.slice(3) + "/market_chart?vs_currency=usd&days=" + days);
+    if (!r.ok) throw new Error("CoinGecko " + r.status);
+    const j = await r.json();
+    data = (j.prices || []).map(([t, p]) => [+t, +p, +t]).sort((a,b) => a[0]-b[0]);
+  } else {
+    const raw = await info({type:"candleSnapshot", req:{coin, interval:iv, startTime:Math.floor(start), endTime:Date.now()}});
+    data = (raw || []).map(c => [+c.t, +c.c, +c.T]).sort((a,b) => a[0]-b[0]);
+  }
   candleCache.set(key, {at:Date.now(), data});
   return data;
 }
@@ -537,6 +564,7 @@ function walletHoldings(){ return snapshot.holdings.filter(h => !CORE_LOCS.has(h
 function srcCoin(src){
   if (src.kind === "perp") return src.coin;
   if (src.kind === "spot") return market.tokenPx[src.idx]?.coin || null;
+  if (src.kind === "cg") return "cg:" + src.id;
   return null;
 }
 async function walletFn(iv, start){
