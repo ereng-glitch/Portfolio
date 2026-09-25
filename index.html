@@ -4,173 +4,182 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Wallet Pulse</title>
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#090c11">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Pulse">
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="theme-color" content="#f5f6f9" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#0b0e14" media="(prefers-color-scheme: dark)">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
 <style>
 :root{
-  color-scheme: light;
-  --bg:#f5f6f9; --surface:#ffffff; --surface-2:#eef0f4;
-  --ink:#0e1320; --ink-2:#465063; --muted:#7a8395; --line:#e2e5ec;
-  --accent:#2f5bd3; --accent-ink:#ffffff;
-  --up:#0f8a5b; --down:#d23f3c; --flat:#e7e9ee; --empty:#f0f1f5;
-  --c1:#2a78d6; --c2:#eb6834; --c3:#1baf7a; --c4:#eda100; --c5:#e87ba4; --c7:#4a3aa7;
+  color-scheme: dark;
+  --bg:#090c11; --surface:#10141b; --surface-2:#161b24; --surface-3:#1e2430;
+  --line:#1e2531; --line-2:#2a3342;
+  --ink:#e8ecf2; --ink-2:#a3acba; --muted:#6d7687;
+  --accent:#8ea2ff; --accent-ink:#0b0e14;
+  --up:#3ccf8e; --down:#f06a6a; --flat:#262d3a; --empty:#141922;
+  --c1:#3987e5; --c2:#d95926; --c3:#199e70; --c4:#c98500; --c5:#d55181; --c6:#9085e9; --small:#4a5364;
   --sans:"Instrument Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --mono:"JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
-  --r:14px;
-}
-@media (prefers-color-scheme: dark){
-  :root:not([data-theme="light"]){
-    color-scheme: dark;
-    --bg:#0b0e14; --surface:#131823; --surface-2:#1b2130;
-    --ink:#eef1f6; --ink-2:#aab2c1; --muted:#7c8597; --line:#252c3a;
-    --accent:#7b97f2; --accent-ink:#0b0e14;
-    --up:#3ecf8e; --down:#f26d6a; --flat:#2a3140; --empty:#171c27;
-    --c1:#3987e5; --c2:#d95926; --c3:#199e70; --c4:#c98500; --c5:#d55181; --c7:#9085e9;
-  }
-}
-:root[data-theme="dark"]{
-  color-scheme: dark;
-  --bg:#0b0e14; --surface:#131823; --surface-2:#1b2130;
-  --ink:#eef1f6; --ink-2:#aab2c1; --muted:#7c8597; --line:#252c3a;
-  --accent:#7b97f2; --accent-ink:#0b0e14;
-  --up:#3ecf8e; --down:#f26d6a; --flat:#2a3140; --empty:#171c27;
-  --c1:#3987e5; --c2:#d95926; --c3:#199e70; --c4:#c98500; --c5:#d55181; --c7:#9085e9;
+  --r:16px;
 }
 *{box-sizing:border-box}
 [hidden]{display:none!important}
 .contents{display:contents}
-html{-webkit-text-size-adjust:100%}
+html{-webkit-text-size-adjust:100%; background:var(--bg)}
 body{
   margin:0; background:var(--bg); color:var(--ink); font-family:var(--sans); font-size:15px; line-height:1.45;
-  padding-top:env(safe-area-inset-top,0px); padding-bottom:calc(env(safe-area-inset-bottom,0px) + 24px);
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:calc(env(safe-area-inset-bottom,0px) + 28px);
 }
-.wrap{max-width:560px; margin:0 auto; padding-inline:16px; display:flex; flex-direction:column; gap:14px}
+.wrap{max-width:600px; margin:0 auto; padding-inline:16px; display:flex; flex-direction:column; gap:14px}
 .num{font-family:var(--mono); font-variant-numeric:tabular-nums; letter-spacing:-.01em}
-button{font:inherit; color:inherit}
-:focus-visible{outline:2px solid var(--accent); outline-offset:2px; border-radius:6px}
+button{font:inherit; color:inherit; -webkit-tap-highlight-color:transparent}
+:focus-visible{outline:2px solid var(--accent); outline-offset:2px; border-radius:8px}
+.up-t{color:var(--up)} .down-t{color:var(--down)} .flat-t{color:var(--ink-2)}
+.sub{font-size:13px; color:var(--muted)}
 
 /* top bar */
-.bar{display:flex; align-items:center; gap:10px; padding-block:14px 2px}
-.brand{font-weight:700; font-size:17px; letter-spacing:-.01em; display:flex; align-items:center; gap:8px}
-.pulse-dot{width:9px; height:9px; border-radius:50%; background:var(--up); box-shadow:0 0 0 3px color-mix(in oklab, var(--up) 22%, transparent)}
+.bar{display:flex; align-items:center; gap:10px; padding-block:14px 0}
+.brand{font-weight:700; font-size:17px; letter-spacing:-.01em; display:flex; align-items:center; gap:9px}
+.pulse-dot{width:9px; height:9px; border-radius:50%; background:var(--up); box-shadow:0 0 0 3px color-mix(in oklab, var(--up) 20%, transparent)}
 .pulse-dot.stale{background:var(--muted); box-shadow:none}
 .spacer{flex:1}
-.chip{border:1px solid var(--line); background:var(--surface); border-radius:999px; padding:6px 11px; font-size:13px; cursor:pointer; display:inline-flex; align-items:center; gap:6px; color:var(--ink-2)}
-.icon-btn{width:36px; height:36px; border-radius:50%; border:1px solid var(--line); background:var(--surface); display:grid; place-items:center; cursor:pointer; color:var(--ink-2)}
-.icon-btn svg{width:18px; height:18px}
-.spin svg{animation:spin 0.9s linear infinite}
+.chip{border:1px solid var(--line-2); background:var(--surface); border-radius:999px; padding:7px 12px; font-size:13px; cursor:pointer; color:var(--ink-2)}
+.icon-btn{width:36px; height:36px; border-radius:50%; border:1px solid var(--line-2); background:var(--surface); display:grid; place-items:center; cursor:pointer; color:var(--ink-2)}
+.icon-btn svg{width:17px; height:17px}
+.spin svg{animation:spin .9s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
 
 /* hero */
-.hero{padding-block:6px 4px; display:flex; flex-direction:column; gap:6px}
-.eyebrow{font-size:12px; text-transform:uppercase; letter-spacing:.08em; color:var(--muted); font-weight:600}
-.total{font-family:var(--sans); font-weight:600; font-size:clamp(38px, 11vw, 50px); letter-spacing:-.03em; line-height:1.05; font-variant-numeric:tabular-nums}
-.total .cents{color:var(--muted); font-size:.55em; letter-spacing:-.01em}
-.delta-row{display:flex; flex-wrap:wrap; align-items:center; gap:8px; font-size:14px; color:var(--ink-2)}
-.pill{display:inline-flex; align-items:center; gap:4px; border-radius:999px; padding:3px 10px; font-weight:600; font-size:14px}
-.pill.up{color:var(--up); background:color-mix(in oklab, var(--up) 14%, transparent)}
-.pill.down{color:var(--down); background:color-mix(in oklab, var(--down) 14%, transparent)}
-.pill.flat{color:var(--ink-2); background:var(--surface-2)}
-.updated{font-size:12px; color:var(--muted)}
+.hero{padding-block:10px 2px; display:flex; flex-direction:column; gap:10px}
+.eyebrow{font-size:11.5px; text-transform:uppercase; letter-spacing:.09em; color:var(--muted); font-weight:600}
+.total{font-weight:600; font-size:clamp(40px, 12vw, 54px); letter-spacing:-.035em; line-height:1; font-variant-numeric:tabular-nums}
+.total .cents{color:var(--muted); font-size:.5em; letter-spacing:-.01em}
+.pnl-strip{display:grid; grid-template-columns:repeat(3, 1fr); background:var(--surface); border:1px solid var(--line); border-radius:14px; overflow:hidden}
+.pnl-cell{padding:10px 12px; display:flex; flex-direction:column; gap:2px; min-width:0}
+.pnl-cell + .pnl-cell{border-left:1px solid var(--line)}
+.pnl-cell .k{font-size:11px; text-transform:uppercase; letter-spacing:.08em; color:var(--muted); font-weight:600}
+.pnl-cell .v{font-family:var(--mono); font-size:15px; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.pnl-cell .p{font-family:var(--mono); font-size:12px; white-space:nowrap}
+.hero-foot{display:flex; justify-content:space-between; gap:4px 10px; flex-wrap:wrap; font-size:12px; color:var(--muted)}
 
 /* cards */
 .card{background:var(--surface); border:1px solid var(--line); border-radius:var(--r); padding:16px; display:flex; flex-direction:column; gap:12px}
-.card-h{display:flex; align-items:baseline; justify-content:space-between; gap:10px; flex-wrap:wrap}
+.card-h{display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap}
 .card-h h2{margin:0; font-size:15px; font-weight:600; letter-spacing:-.005em}
-.sub{font-size:13px; color:var(--muted)}
-.seg{display:inline-flex; background:var(--surface-2); border-radius:10px; padding:3px; gap:2px}
-.seg button{border:0; background:transparent; padding:5px 12px; border-radius:8px; font-size:13px; font-weight:600; color:var(--ink-2); cursor:pointer}
-.seg button[aria-pressed="true"]{background:var(--surface); color:var(--ink); box-shadow:0 1px 2px rgba(0,0,0,.08)}
+.seg{display:inline-flex; background:var(--bg); border:1px solid var(--line); border-radius:10px; padding:3px; gap:2px}
+.seg button{border:0; background:transparent; padding:5px 11px; border-radius:7px; font-size:12.5px; font-weight:600; color:var(--muted); cursor:pointer; min-width:38px}
+.seg button[aria-pressed="true"]{background:var(--surface-3); color:var(--ink)}
+.summary{display:flex; flex-wrap:wrap; align-items:baseline; gap:4px 12px; font-size:13px; color:var(--ink-2)}
+.summary .big{font-family:var(--mono); font-size:17px; font-weight:500}
+.summary .lbl{color:var(--muted)}
 
-/* chart */
-.chart-box{position:relative; height:220px; touch-action:pan-y}
+/* charts */
+.chart-box{position:relative; height:230px; touch-action:pan-y; user-select:none; -webkit-user-select:none}
+.chart-box.small{height:170px}
 .chart-box svg{display:block; width:100%; height:100%; overflow:visible}
 .grid-line{stroke:var(--line); stroke-width:1}
 .axis-t{fill:var(--muted); font-family:var(--mono); font-size:10.5px}
-.tip{position:absolute; top:0; pointer-events:none; background:var(--ink); color:var(--bg); border-radius:10px; padding:8px 10px; font-size:12px; line-height:1.4; min-width:150px; transform:translateX(-50%); box-shadow:0 4px 14px rgba(0,0,0,.18)}
-.tip .t-date{opacity:.7}
-.tip .t-total{font-family:var(--mono); font-weight:500; font-size:14px}
-.tip .t-row{display:flex; justify-content:space-between; gap:12px; font-family:var(--mono); opacity:.85}
-.range-change{font-size:13px; color:var(--ink-2); display:flex; gap:8px; align-items:center; flex-wrap:wrap}
+.tip{position:absolute; top:-6px; pointer-events:none; background:#f3f5f9; color:#0b0e14; border-radius:10px; padding:8px 10px; font-size:12px; line-height:1.4; min-width:170px; transform:translate(-50%,-100%); box-shadow:0 8px 24px rgba(0,0,0,.45); z-index:3}
+.tip .t-date{color:#5b6475}
+.tip .t-main{font-family:var(--mono); font-weight:500; font-size:14px}
+.tip .t-row{display:flex; justify-content:space-between; gap:14px; font-family:var(--mono); color:#2b3240}
+.tip .t-row.ev{color:#5a3fd6}
+.legend-line{display:flex; gap:14px; flex-wrap:wrap; font-size:12px; color:var(--muted); align-items:center}
+.legend-line i{display:inline-block; width:7px; height:7px; transform:rotate(45deg); background:var(--ink-2); margin-right:7px; vertical-align:1px}
+.skel{background:linear-gradient(90deg, var(--surface-2), var(--surface-3), var(--surface-2)); background-size:200% 100%; animation:sh 1.3s ease infinite; border-radius:8px}
+@keyframes sh{to{background-position:-200% 0}}
 
 /* calendar */
 .cal-wrap{overflow-x:auto}
-.cal{display:grid; grid-template-columns:22px repeat(var(--weeks), minmax(12px, 1fr)); gap:3px; min-width:290px}
+.cal{display:grid; grid-template-columns:24px repeat(var(--weeks), minmax(12px, 34px)); gap:3px}
 .cal .m{font-size:10.5px; color:var(--muted); height:14px; white-space:nowrap; overflow:visible}
-.cal .dl{font-size:10px; color:var(--muted); display:flex; align-items:center; height:100%}
-.cell{aspect-ratio:1; border-radius:3px; background:var(--empty); border:0; padding:0; cursor:pointer; max-width:100%}
+.cal .dl{font-size:10px; color:var(--muted); display:flex; align-items:center}
+.cell{aspect-ratio:1; border-radius:3px; background:var(--empty); border:0; padding:0; cursor:pointer; width:100%}
 .cell.none{cursor:default}
 .cell.future{visibility:hidden}
 .cell.sel{outline:2px solid var(--ink); outline-offset:1px}
-.cell.u1{background:color-mix(in oklab, var(--up) 28%, var(--empty))}
-.cell.u2{background:color-mix(in oklab, var(--up) 52%, var(--empty))}
-.cell.u3{background:color-mix(in oklab, var(--up) 76%, var(--empty))}
+.cell.u1{background:color-mix(in oklab, var(--up) 26%, var(--empty))}
+.cell.u2{background:color-mix(in oklab, var(--up) 50%, var(--empty))}
+.cell.u3{background:color-mix(in oklab, var(--up) 74%, var(--empty))}
 .cell.u4{background:var(--up)}
-.cell.d1{background:color-mix(in oklab, var(--down) 28%, var(--empty))}
-.cell.d2{background:color-mix(in oklab, var(--down) 52%, var(--empty))}
-.cell.d3{background:color-mix(in oklab, var(--down) 76%, var(--empty))}
+.cell.d1{background:color-mix(in oklab, var(--down) 26%, var(--empty))}
+.cell.d2{background:color-mix(in oklab, var(--down) 50%, var(--empty))}
+.cell.d3{background:color-mix(in oklab, var(--down) 74%, var(--empty))}
 .cell.d4{background:var(--down)}
 .cell.z{background:var(--flat)}
+.cell.est{background-image:repeating-linear-gradient(135deg, transparent 0 2px, color-mix(in oklab, var(--bg) 55%, transparent) 2px 4px)}
 .cal-legend{display:flex; align-items:center; gap:4px; font-size:11px; color:var(--muted); flex-wrap:wrap}
 .cal-legend .cell{width:11px; height:11px; cursor:default}
 .cal-detail{font-size:14px; min-height:21px; color:var(--ink-2)}
 .cal-detail b{color:var(--ink); font-weight:600}
-.stats{display:grid; grid-template-columns:repeat(4, 1fr); gap:8px}
+.stats, .dstats{display:grid; grid-template-columns:repeat(4, 1fr); gap:8px}
+.stats{border-top:1px solid var(--line); padding-top:12px}
 .stat{display:flex; flex-direction:column; gap:2px; min-width:0}
-.stat .k{font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); font-weight:600}
+.stat .k{font-size:10.5px; text-transform:uppercase; letter-spacing:.07em; color:var(--muted); font-weight:600}
 .stat .v{font-family:var(--mono); font-size:14px; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
-.up-t{color:var(--up)} .down-t{color:var(--down)}
 
 /* allocation */
-.alloc-bar{display:flex; height:12px; border-radius:6px; overflow:hidden; gap:2px; background:var(--surface)}
+.alloc-bar{display:flex; height:10px; border-radius:6px; overflow:hidden; gap:2px}
 .alloc-bar span{display:block; height:100%; min-width:3px}
-.alloc-list{display:flex; flex-direction:column; gap:8px; margin:0; padding:0; list-style:none}
-.alloc-list li{display:grid; grid-template-columns:12px 1fr auto auto; gap:10px; align-items:center; font-size:14px}
+.alloc-list{display:flex; flex-direction:column; gap:10px; margin:0; padding:0; list-style:none}
+.alloc-list li{display:grid; grid-template-columns:10px 1fr auto 52px; gap:10px; align-items:center; font-size:14px}
+.alloc-list .nm{display:flex; flex-direction:column; min-width:0}
+.alloc-list .nm small{color:var(--muted); font-size:12px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
 .sw{width:10px; height:10px; border-radius:3px}
-.alloc-list .pct{color:var(--muted); font-size:12.5px; width:48px; text-align:right}
+.alloc-list .pct{color:var(--muted); font-size:12.5px; text-align:right}
 
 /* holdings */
-.rows{display:flex; flex-direction:column}
-.row{display:grid; grid-template-columns:1fr auto; gap:2px 12px; padding-block:10px; border-top:1px solid var(--line)}
-.row:first-child{border-top:0; padding-top:2px}
-.row .sym{font-weight:600; display:flex; align-items:center; gap:8px; min-width:0}
-.row .val{text-align:right; font-family:var(--mono); font-weight:500}
-.row .amt{font-size:12.5px; color:var(--muted); font-family:var(--mono); overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
-.row .chg{text-align:right; font-size:12.5px; font-family:var(--mono)}
-.loc{font-size:11px; font-weight:600; border-radius:6px; padding:1px 7px; background:var(--surface-2); color:var(--ink-2); white-space:nowrap; display:inline-flex; align-items:center; gap:5px}
-.loc i{width:7px; height:7px; border-radius:2px; display:inline-block}
-.link-btn{background:none; border:0; padding:0; color:var(--accent); font-weight:600; font-size:13px; cursor:pointer; align-self:flex-start}
+.hlist{display:flex; flex-direction:column}
+.hrow{border-top:1px solid var(--line)}
+.hlist > .hrow:first-child{border-top:0}
+.hbtn{width:100%; background:none; border:0; padding:11px 0; display:grid; grid-template-columns:32px minmax(0,1fr) 48px 104px; gap:8px; align-items:center; text-align:left; cursor:pointer}
+.badge{width:32px; height:32px; border-radius:50%; background:var(--surface-3); display:grid; place-items:center; font-size:11px; font-weight:700; letter-spacing:.02em; color:var(--ink-2); position:relative}
+.badge i{position:absolute; right:-1px; bottom:-1px; width:11px; height:11px; border-radius:50%; border:2px solid var(--surface)}
+.hmain{display:flex; flex-direction:column; min-width:0; gap:1px}
+.hsym{font-weight:600; display:flex; align-items:center; gap:7px; min-width:0}
+.hsym span:first-child{white-space:nowrap; flex:none}
+.loc{font-size:11px; font-weight:600; border-radius:6px; padding:1px 7px; background:var(--surface-3); color:var(--ink-2); white-space:nowrap; min-width:0; overflow:hidden; text-overflow:ellipsis}
+.hamt{font-size:12px; color:var(--muted); font-family:var(--mono); overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.spark{width:48px; height:26px; display:block}
+.spark svg{width:100%; height:100%; display:block; overflow:visible}
+.hval{display:flex; flex-direction:column; align-items:flex-end; gap:1px}
+.hval .v{font-family:var(--mono); font-weight:500; white-space:nowrap}
+.hval .c{font-family:var(--mono); font-size:12px; white-space:nowrap}
+.hdetail{padding:2px 0 14px; display:flex; flex-direction:column; gap:10px}
+.hbtn.nospark{grid-template-columns:32px minmax(0,1fr) 112px}
+.small-row .badge{background:var(--surface-2); color:var(--muted)}
+.small-list{background:var(--bg); border-radius:12px; padding-inline:12px; margin-bottom:6px}
+.small-list .hrow:first-child{border-top:0}
+.small-list .hbtn{cursor:default; grid-template-columns:32px minmax(0,1fr) auto}
+.small-list .badge i{border-color:var(--bg)}
+@media (max-width:360px){ .hbtn{grid-template-columns:32px minmax(0,1fr) auto} .hbtn .spark{display:none} }
 
 /* banners + setup */
-.banner{border-radius:12px; padding:10px 12px; font-size:13px; background:color-mix(in oklab, var(--c4) 16%, var(--surface)); color:var(--ink); border:1px solid color-mix(in oklab, var(--c4) 40%, var(--line))}
+.banner{border-radius:12px; padding:10px 12px; font-size:13px; background:color-mix(in oklab, var(--c4) 14%, var(--surface)); border:1px solid color-mix(in oklab, var(--c4) 35%, var(--line))}
 .banner.err{background:color-mix(in oklab, var(--down) 12%, var(--surface)); border-color:color-mix(in oklab, var(--down) 40%, var(--line))}
 .setup{margin-top:8vh}
 .setup h1{font-size:28px; letter-spacing:-.02em; margin:0; line-height:1.15; text-wrap:balance}
 .setup p{margin:0; color:var(--ink-2); max-width:60ch}
 .field{display:flex; flex-direction:column; gap:6px}
 .field label{font-size:13px; font-weight:600}
-.field input{font-family:var(--mono); font-size:15px; padding:12px; border-radius:12px; border:1px solid var(--line); background:var(--bg); color:var(--ink); width:100%}
+.field input{font-family:var(--mono); font-size:15px; padding:12px; border-radius:12px; border:1px solid var(--line-2); background:var(--bg); color:var(--ink); width:100%}
 .field .hint{font-size:12.5px; color:var(--muted)}
 .field .hint.err{color:var(--down)}
 .primary{background:var(--accent); color:var(--accent-ink); border:0; border-radius:12px; padding:12px 16px; font-weight:600; font-size:15px; cursor:pointer}
-.ghost{background:transparent; border:1px solid var(--line); border-radius:12px; padding:12px 16px; font-weight:600; cursor:pointer}
+.ghost{background:transparent; border:1px solid var(--line-2); border-radius:12px; padding:12px 16px; font-weight:600; cursor:pointer}
 .btns{display:flex; gap:8px; flex-wrap:wrap}
-.foot{font-size:12px; color:var(--muted); line-height:1.5; padding-inline:2px}
-.foot p{margin:0 0 6px}
-.skel{background:linear-gradient(90deg, var(--surface-2), var(--line), var(--surface-2)); background-size:200% 100%; animation:sh 1.3s ease infinite; border-radius:8px}
-@keyframes sh{to{background-position:-200% 0}}
+details.notes{background:var(--surface); border:1px solid var(--line); border-radius:var(--r); padding:14px 16px; font-size:13px; color:var(--ink-2)}
+details.notes summary{cursor:pointer; font-weight:600; color:var(--ink); font-size:14px}
+details.notes p{margin:10px 0 0; line-height:1.55; max-width:65ch}
 @media (prefers-reduced-motion: reduce){ .skel, .spin svg{animation:none} }
 </style>
 </head>
 <body>
-<div class="wrap" id="app">
+<div class="wrap">
   <header class="bar">
     <div class="brand"><span class="pulse-dot stale" id="dot"></span>Wallet Pulse</div>
     <div class="spacer"></div>
@@ -180,13 +189,12 @@ button{font:inherit; color:inherit}
     </button>
   </header>
 
-  <!-- setup -->
   <section class="card setup" id="setup" hidden>
     <h1>Track HyperCore, HyperEVM and Ethereum in one number</h1>
-    <p>Paste the public address you use on Hyperliquid. It is saved on this phone only. Never paste a private key or seed phrase.</p>
+    <p>Paste the public address you use on Hyperliquid. It is saved on this device only. Never paste a private key or seed phrase.</p>
     <form id="setupForm" class="field" novalidate>
       <label for="addrInput">Wallet address</label>
-      <input id="addrInput" name="addr" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="0x…" inputmode="text">
+      <input id="addrInput" name="addr" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="0x…">
       <span class="hint" id="addrHint">Starts with 0x and has 42 characters.</span>
       <div class="btns">
         <button class="primary" type="submit">Show my portfolio</button>
@@ -195,80 +203,98 @@ button{font:inherit; color:inherit}
     </form>
   </section>
 
-  <!-- dashboard -->
   <main id="dash" class="contents" hidden>
     <div id="banners" class="contents"></div>
 
     <section class="hero" aria-live="polite">
       <div class="eyebrow">Net worth</div>
-      <div class="total" id="total"><span class="skel" style="display:inline-block;width:220px;height:44px"></span></div>
-      <div class="delta-row">
-        <span class="pill flat num" id="dayPill">—</span>
-        <span>today, from price moves</span>
+      <div class="total" id="total"><span class="skel" style="display:inline-block;width:230px;height:48px"></span></div>
+      <div class="pnl-strip" id="pnlStrip">
+        <div class="pnl-cell"><span class="k">24H</span><span class="v skel" style="height:18px;width:80%"></span><span class="p">&nbsp;</span></div>
+        <div class="pnl-cell"><span class="k">7D</span><span class="v skel" style="height:18px;width:80%"></span><span class="p">&nbsp;</span></div>
+        <div class="pnl-cell"><span class="k">30D</span><span class="v skel" style="height:18px;width:80%"></span><span class="p">&nbsp;</span></div>
       </div>
-      <div class="updated" id="updated">Loading…</div>
+      <div class="hero-foot"><span>Profit and loss, not counting deposits, withdrawals or transfers</span><span id="updated">Loading…</span></div>
     </section>
 
-    <section class="card" aria-labelledby="hH">
+    <section class="card" aria-labelledby="vH">
       <div class="card-h">
-        <h2 id="hH">Value over time</h2>
-        <div class="seg" role="group" aria-label="Chart range">
-          <button type="button" data-range="7D" aria-pressed="false">7D</button>
-          <button type="button" data-range="30D" aria-pressed="true">30D</button>
-          <button type="button" data-range="All" aria-pressed="false">All</button>
+        <h2 id="vH">Value</h2>
+        <div class="seg" role="group" aria-label="Chart range" id="rangeSeg">
+          <button type="button" data-range="1D">1D</button>
+          <button type="button" data-range="1W">1W</button>
+          <button type="button" data-range="1M">1M</button>
+          <button type="button" data-range="All">All</button>
         </div>
       </div>
-      <div class="range-change" id="rangeChange"><span class="skel" style="width:160px;height:16px"></span></div>
+      <div class="summary" id="rangeSummary"><span class="skel" style="width:200px;height:20px"></span></div>
       <div class="chart-box" id="chartBox"><div class="skel" style="position:absolute;inset:0"></div></div>
+      <div class="legend-line" id="chartLegend" hidden><span><i></i>Money moved in or out of Hyperliquid</span></div>
     </section>
 
     <section class="card" aria-labelledby="cH">
       <div class="card-h">
         <h2 id="cH">Daily up / down</h2>
-        <span class="sub">Last 18 weeks</span>
+        <span class="sub" id="calRange"></span>
       </div>
-      <div class="cal-wrap"><div class="cal" id="cal" style="--weeks:18"></div></div>
-      <div class="cal-detail" id="calDetail">Tap a day to see its move.</div>
+      <div class="cal-wrap"><div class="cal" id="cal" style="--weeks:12"></div></div>
+      <div class="cal-detail" id="calDetail">Tap a day to see its profit or loss.</div>
       <div class="cal-legend" aria-hidden="true">
         <span>Down</span>
         <span class="cell d4"></span><span class="cell d3"></span><span class="cell d2"></span><span class="cell d1"></span>
         <span class="cell z"></span>
         <span class="cell u1"></span><span class="cell u2"></span><span class="cell u3"></span><span class="cell u4"></span>
         <span>Up</span>
-        <span style="margin-left:auto">Steps: 0.5% · 2% · 5%</span>
+        <span style="margin-left:auto">0.5% · 2% · 5% steps · striped = estimated</span>
       </div>
       <div class="stats" id="stats"></div>
     </section>
 
     <section class="card" aria-labelledby="aH">
-      <div class="card-h"><h2 id="aH">Where it sits</h2></div>
+      <div class="card-h">
+        <h2 id="aH">Where it sits</h2>
+        <div class="seg" role="group" aria-label="Group by" id="allocSeg">
+          <button type="button" data-g="asset">Assets</button>
+          <button type="button" data-g="place">Places</button>
+        </div>
+      </div>
       <div class="alloc-bar" id="allocBar"></div>
       <ul class="alloc-list" id="allocList"></ul>
     </section>
 
-    <section class="card" aria-labelledby="pH" id="posCard" hidden>
-      <div class="card-h"><h2 id="pH">Open perp positions</h2><span class="sub">Included in perps margin</span></div>
-      <div class="rows" id="positions"></div>
-    </section>
-
     <section class="card" aria-labelledby="tH">
-      <div class="card-h"><h2 id="tH">Holdings</h2><span class="sub" id="holdCount"></span></div>
-      <div class="rows" id="holdings"></div>
-      <button class="link-btn" type="button" id="dustBtn" hidden></button>
+      <div class="card-h">
+        <h2 id="tH">Holdings</h2>
+        <div class="seg" role="group" aria-label="Show" id="holdSeg">
+          <button type="button" data-m="pnl">Profit</button>
+          <button type="button" data-m="24h">Market</button>
+        </div>
+      </div>
+      <div class="summary" id="holdSummary"></div>
+      <div class="hlist" id="holdings"></div>
     </section>
 
-    <footer class="foot">
-      <p><b>Today</b> is what your current holdings gained or lost from price moves over the last 24 hours, the same way DeBank computes it. Deposits and withdrawals don't count.</p>
-      <p><b>Value over time</b> uses Hyperliquid's own account history for HyperCore (spot, perps, vaults). Staked HYPE, HyperEVM and Ethereum are your current balances priced at each past moment, so earlier transfers into those wallets aren't reflected.</p>
-      <p><b>Daily up / down</b> uses Hyperliquid's PnL history plus price moves on your other balances, so deposits and withdrawals don't show up as gains or losses.</p>
-      <p>Data: Hyperliquid public API, HyperEVM and Ethereum public nodes. Ethereum covers ETH and common tokens (USDC, USDT, DAI, USDe, WETH, stETH, WBTC, LINK, UNI, AAVE, ENA, ONDO, RAIL). RAIL is priced from CoinGecko.</p>
-    </footer>
+    <section class="card" aria-labelledby="pH" id="posCard" hidden>
+      <div class="card-h"><h2 id="pH">Open perp positions</h2><span class="sub">Unrealized, included in perps margin</span></div>
+      <div class="hlist" id="positions"></div>
+    </section>
+
+    <details class="notes">
+      <summary>How these numbers work</summary>
+      <p><b>Profit and loss</b> leaves out money you deposit, withdraw or move between Hyperliquid, HyperEVM and Ethereum. HyperCore uses Hyperliquid's own P&amp;L history. Wallets and staked HYPE count only price moves on what you held at the time.</p>
+      <p><b>Value</b> uses Hyperliquid's account history for HyperCore, merged down to its finest detail. Transfers are placed at the exact minute from your transfer log, so money in transit isn't counted twice. Staked HYPE, HyperEVM and Ethereum balances are rebuilt from your transaction history and priced at each moment.</p>
+      <p><b>Daily up / down</b> is each day's profit or loss. Striped days are older than Hyperliquid's detailed history, so a few days share one estimate.</p>
+      <p><b>Average entry</b> for HyperCore spot is Hyperliquid's own cost basis. Tokens moved in from elsewhere count at the price when they arrived. Ethereum tokens use what you paid in the same transaction, or the market price when they arrived. HyperEVM and staked HYPE use the price when the balance went up. Sales lower the cost in proportion, so the average entry stays the same.</p>
+      <p><b>Small balances</b> under $20 are grouped at the bottom of Holdings and Where it sits.</p>
+      <p>Data: Hyperliquid public API, HyperEVM and Ethereum public nodes, Blockscout for Ethereum history, CoinGecko for RAIL. Any ERC-20 token on Ethereum is found automatically. Listed coins are priced by CoinGecko, and DEX-only coins by GeckoTerminal when they have at least $20k of liquidity. Airdropped spam without real liquidity is hidden. On HyperEVM, every token that trades on HyperCore is checked, plus WHYPE and kHYPE.</p>
+    </details>
   </main>
 </div>
 
 <script>
 (() => {
 "use strict";
+/* ============ config ============ */
 const HL = "https://api.hyperliquid.xyz/info";
 const HYPEREVM_RPCS = ["https://rpc.hyperliquid.xyz/evm", "https://rpc.hypurrscan.io", "https://hyperliquid.drpc.org"];
 const ETH_RPCS = ["https://ethereum-rpc.publicnode.com", "https://eth.llamarpc.com", "https://cloudflare-eth.com"];
@@ -285,152 +311,215 @@ const ETH_TOKENS = [
   {sym:"AAVE", addr:"0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9", dec:18, src:"AAVE"},
   {sym:"ENA", addr:"0x57e114B691Db790C35207b2e685D4A43181e6061", dec:18, src:"ENA"},
   {sym:"ONDO", addr:"0xfAbA6f8e4a5E8Ab82F62fe7C39859FA577269BE3", dec:18, src:"ONDO"},
-  {sym:"RAIL", addr:"0xe76C6c83af64e4C60245D8C7dE953DF673a7A33D", dec:18, src:"cg:railgun"},
 ];
-const LOCS = {
-  "Core spot": "var(--c1)", "Perps margin": "var(--c2)", "Vaults": "var(--c3)",
-  "Staked HYPE": "var(--c4)", "HyperEVM": "var(--c5)", "Ethereum": "var(--c7)"
-};
-const LOC_ORDER = Object.keys(LOCS);
+// HyperEVM tokens that aren't HyperCore spot tokens, checked on every full scan
+const EVM_EXTRA = [
+  {sym:"WHYPE", addr:"0x5555555555555555555555555555555555555555", dec:18, asHype:true},
+  {sym:"kHYPE", addr:"0xfd739d4e423301ce9385c1fb8850539d657c296d", dec:18},
+];
+const GT = "https://api.geckoterminal.com/api/v2";
+const MIN_LIQ = 20000; // DEX-only tokens need this much liquidity to be priced (filters spam airdrops)
+const LOCS = {"Core spot":"var(--c1)", "Perps margin":"var(--c2)", "Vaults":"var(--c3)", "Staked HYPE":"var(--c4)", "HyperEVM":"var(--c5)", "Ethereum":"var(--c6)"};
+const LOC_SHORT = {"Core spot":"Core", "Perps margin":"Perps", "Vaults":"Vault", "Staked HYPE":"Staked", "HyperEVM":"EVM", "Ethereum":"Eth"};
+const SLOTS = ["var(--c1)", "var(--c2)", "var(--c3)", "var(--c4)", "var(--c5)", "var(--c6)"];
 const CORE_LOCS = new Set(["Core spot", "Perps margin", "Vaults"]);
+const SMALL = 20;
+const MIN = 60e3, HOUR = 36e5, DAY = 864e5;
 const RANGES = {
-  "7D":  {key:"week",  iv:"1h", ms:3600e3,   span:7*864e5},
-  "30D": {key:"month", iv:"4h", ms:4*3600e3, span:30*864e5},
-  "All": {key:"allTime", iv:"1d", ms:864e5,  span:730*864e5},
+  "1D": {span:DAY, step:15*MIN},
+  "1W": {span:7*DAY, step:HOUR},
+  "1M": {span:30*DAY, step:4*HOUR},
+  "All": {span:730*DAY, step:null},
 };
 const $ = id => document.getElementById(id);
-
-/* ---------- storage (per-device convenience) ---------- */
 const store = {
   get(k){ try { return localStorage.getItem(k); } catch { return null; } },
-  set(k,v){ try { localStorage.setItem(k,v); } catch {} },
+  set(k, v){ try { localStorage.setItem(k, v); } catch {} },
+  json(k){ try { return JSON.parse(localStorage.getItem(k) || "null"); } catch { return null; } },
+  setJson(k, v){ try { localStorage.setItem(k, JSON.stringify(v)); } catch {} },
 };
 
-/* ---------- formatting ---------- */
-const usd2 = new Intl.NumberFormat("en-US",{style:"currency",currency:"USD",minimumFractionDigits:2,maximumFractionDigits:2});
-const usd0 = new Intl.NumberFormat("en-US",{style:"currency",currency:"USD",maximumFractionDigits:0});
-function fmtUsd(v){ return Math.abs(v) >= 1e5 ? usd0.format(v) : usd2.format(v); }
+/* ============ formatting ============ */
+const usd2 = new Intl.NumberFormat("en-US", {style:"currency", currency:"USD", minimumFractionDigits:2, maximumFractionDigits:2});
+const usd0 = new Intl.NumberFormat("en-US", {style:"currency", currency:"USD", maximumFractionDigits:0});
+const fmtUsd = v => Math.abs(v) >= 1e5 ? usd0.format(v) : usd2.format(v);
+const sign = v => v > 0 ? "+" : v < 0 ? "−" : "";
+const fmtSigned = v => sign(v) + fmtUsd(Math.abs(v));
 function fmtCompact(v){
-  const a = Math.abs(v);
-  if (a >= 1e9) return "$" + (v/1e9).toFixed(a>=1e10?0:1) + "B";
-  if (a >= 1e6) return "$" + (v/1e6).toFixed(a>=1e7?1:2) + "M";
-  if (a >= 1e3) return "$" + (v/1e3).toFixed(a>=1e5?0:1) + "k";
-  return "$" + v.toFixed(0);
+  const a = Math.abs(v), s = v < 0 ? "−" : "";
+  if (a >= 1e9) return s + "$" + (a/1e9).toFixed(a >= 1e10 ? 0 : 1) + "B";
+  if (a >= 1e6) return s + "$" + (a/1e6).toFixed(a >= 1e7 ? 1 : 2) + "M";
+  if (a >= 1e3) return s + "$" + (a/1e3).toFixed(a >= 1e5 ? 0 : 1) + "k";
+  return s + "$" + a.toFixed(a >= 100 ? 0 : 2);
 }
-function fmtSigned(v){ return (v>0?"+":v<0?"−":"") + fmtUsd(Math.abs(v)); }
-function fmtPct(p){ if (!isFinite(p)) return "—"; return (p>0?"+":p<0?"−":"") + Math.abs(p).toFixed(Math.abs(p)<10?2:1) + "%"; }
-function fmtAmt(a){
-  const x = Math.abs(a);
-  const d = x >= 1000 ? 2 : x >= 1 ? 4 : x >= 0.01 ? 5 : 8;
-  return a.toLocaleString("en-US",{maximumFractionDigits:d});
+const fmtSignedCompact = v => (v > 0 ? "+" : "") + fmtCompact(v);
+function fmtPctShort(p){ if (!isFinite(p)) return "—"; const a = Math.abs(p); return sign(p) + a.toFixed(a < 10 ? 1 : 0) + "%"; }
+const fmtPnl = v => sign(v) + (Math.abs(v) >= 1000 ? usd0.format(Math.abs(v)) : usd2.format(Math.abs(v)));
+function fmtPct(p){ if (!isFinite(p)) return "—"; const a = Math.abs(p); return sign(p) + a.toFixed(a < 10 ? 2 : 1) + "%"; }
+function fmtPrice(p){
+  if (!(p > 0)) return "—";
+  if (p >= 1000) return usd2.format(p);
+  if (p >= 10) return "$" + p.toLocaleString("en-US", {minimumFractionDigits:2, maximumFractionDigits:2});
+  if (p >= 1) return "$" + p.toLocaleString("en-US", {minimumFractionDigits:2, maximumFractionDigits:3});
+  return "$" + p.toPrecision(4);
 }
-function shortAddr(a){ return a.slice(0,6) + "…" + a.slice(-4); }
-function dirClass(v){ return v > 0.0000001 ? "up" : v < -0.0000001 ? "down" : "flat"; }
+function fmtPriceAxis(v){
+  if (v >= 1000) return fmtCompact(v);
+  if (v >= 10) return "$" + v.toFixed(v % 1 ? 1 : 0);
+  if (v >= 1) return "$" + v.toFixed(2);
+  return "$" + (+v.toPrecision(2));
+}
+function fmtAmt(a){ const x = Math.abs(a); return a.toLocaleString("en-US", {maximumFractionDigits: x >= 1000 ? 2 : x >= 1 ? 4 : x >= 0.01 ? 5 : 8}); }
+const shortAddr = a => a.slice(0, 6) + "…" + a.slice(-4);
+const dir = v => v > 1e-9 ? "up" : v < -1e-9 ? "down" : "flat";
+const dirT = v => dir(v) + "-t";
 
-/* ---------- network ---------- */
-async function info(body){
-  const r = await fetch(HL, {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(body)});
-  if (!r.ok) throw new Error("Hyperliquid returned " + r.status);
-  return r.json();
+/* ============ network ============ */
+async function fetchJSON(url, init, ms){
+  const ac = new AbortController(); const tm = setTimeout(() => ac.abort(), ms || 20000);
+  try {
+    const r = await fetch(url, Object.assign({signal:ac.signal}, init || {}));
+    if (!r.ok) throw new Error(new URL(url).hostname + " returned " + r.status);
+    return await r.json();
+  } finally { clearTimeout(tm); }
 }
-async function rpcBatch(urls, calls){
-  if (!calls.length) return [];
-  let lastErr;
-  for (const url of urls){
-    try {
-      const out = new Array(calls.length).fill(null);
-      for (let i = 0; i < calls.length; i += 20){
-        const chunk = calls.slice(i, i+20).map((c, j) => ({jsonrpc:"2.0", id:i+j, method:c.method, params:c.params}));
-        const r = await fetch(url, {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(chunk)});
-        if (!r.ok) throw new Error(url + " " + r.status);
-        const j = await r.json();
-        if (!Array.isArray(j)) throw new Error("batch not supported");
-        for (const res of j) if (res && typeof res.id === "number" && res.result !== undefined) out[res.id] = res.result;
-      }
-      return out;
-    } catch (e){ lastErr = e; }
+const info = body => fetchJSON(HL, {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(body)});
+const RPC_MAX = {"https://hyperliquid.drpc.org": 3};
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+async function rpcChunk(url, calls, a, b, out){
+  const size = RPC_MAX[url] || 20;
+  for (let s = a; s < b; s += size){
+    const body = calls.slice(s, Math.min(b, s + size)).map((c, j) => ({jsonrpc:"2.0", id:s + j, method:c.method, params:c.params}));
+    const j = await fetchJSON(url, {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(body)}, 15000);
+    if (!Array.isArray(j)) throw new Error((j && j.error && j.error.message) || "batch refused");
+    for (const r of j){
+      if (!r || typeof r.id !== "number") continue;
+      if (r.error && /rate|limit|batch/i.test(r.error.message || "")) throw new Error(r.error.message);
+      if (r.result !== undefined) out[r.id] = r.result;
+    }
   }
-  throw lastErr || new Error("No node reachable");
+}
+// Sends JSON-RPC calls in batches of 20, spread over two nodes, retrying with a pause when a node is busy.
+async function rpcBatch(urls, calls, conc){
+  if (!calls.length) return [];
+  const out = new Array(calls.length).fill(null), starts = [];
+  for (let i = 0; i < calls.length; i += 20) starts.push(i);
+  const spread = Math.min(2, urls.length);
+  let failed = null;
+  await pool(starts, conc || 2, async i => {
+    let err;
+    for (let attempt = 0; attempt < 6; attempt++){
+      const url = attempt < 4 ? urls[(attempt + i / 20) % spread] : urls[attempt % urls.length];
+      try { await rpcChunk(url, calls, i, Math.min(calls.length, i + 20), out); return; }
+      catch (e){ err = e; await sleep(500 * (attempt + 1)); }
+    }
+    failed = err;
+  });
+  if (failed) throw failed;
+  return out;
 }
 function hexToNum(hex, dec){
   if (!hex || hex === "0x") return 0;
-  try { const b = BigInt(hex); if (b === 0n) return 0; return Number(b) / Math.pow(10, dec); } catch { return 0; }
+  try { const b = BigInt(hex); return b === 0n ? 0 : Number(b) / Math.pow(10, dec); } catch { return 0; }
 }
-function balanceOfData(addr){ return "0x70a08231" + addr.slice(2).toLowerCase().padStart(64, "0"); }
+const balanceOfData = addr => "0x70a08231" + addr.slice(2).toLowerCase().padStart(64, "0");
+async function pool(items, n, fn){
+  const q = items.slice(); const run = async () => { while (q.length){ const x = q.shift(); try { await fn(x); } catch {} } };
+  await Promise.all(Array.from({length:Math.min(n, q.length)}, run));
+}
 
-/* ---------- state ---------- */
-let ADDR = null;
-let market = null;            // {spotTokens, tokenPx, perpPx, hypeIdx, hypeCoin}
-let snapshot = null;          // {holdings, positions, portfolio, total, prevTotal, errors}
-let range = store.get("range") || "30D";
-if (!RANGES[range]) range = "30D";
-const candleCache = new Map();
-let seriesCache = new Map();
-let lastLoad = 0, loading = false, showDust = false, selectedDay = null;
+/* ============ state ============ */
+let ADDR = null, market = null, snapshot = null, hist = null, model = null;
+let range = store.get("range2") || "1W"; if (!RANGES[range]) range = "1W";
+let allocGroup = store.get("alloc") || "asset";
+let lastLoad = 0, loading = false, selectedDay = null, openRow = null, showSmall = false;
+let holdMode = store.get("hold") || "pnl";
+let evmScan = null;
+let dexScan = null; // builder-deployed perp exchanges (HIP-3) where you have margin: {addr, at, active:[names]} // {addr, at, held:Set of token indexes}
+const detailRange = {};
 
-/* ---------- market data ---------- */
+/* ============ market ============ */
 async function loadMarket(){
-  const [[spotMeta, spotCtxs], [perpMeta, perpCtxs]] = await Promise.all([
-    info({type:"spotMetaAndAssetCtxs"}), info({type:"metaAndAssetCtxs"})
-  ]);
+  const [[spotMeta, spotCtxs], [perpMeta, perpCtxs]] = await Promise.all([info({type:"spotMetaAndAssetCtxs"}), info({type:"metaAndAssetCtxs"})]);
   const perpPx = {};
   perpMeta.universe.forEach((u, i) => {
     const c = perpCtxs[i]; if (!c) return;
-    const px = +(c.midPx ?? c.markPx); const prev = +c.prevDayPx;
+    const px = +(c.midPx ?? c.markPx), prev = +c.prevDayPx;
     if (px > 0) perpPx[u.name] = {px, prev: prev > 0 ? prev : px};
   });
-  const ctxByCoin = {};
-  for (const c of spotCtxs) if (c && c.coin) ctxByCoin[c.coin] = c;
-  const tokens = {}; for (const t of spotMeta.tokens) tokens[t.index] = t;
-  const tokenPx = {0:{px:1, prev:1, coin:null, vol:Infinity, stable:true}};
-  const setPx = (pass) => {
+  const ctxByCoin = {}; for (const c of spotCtxs) if (c && c.coin) ctxByCoin[c.coin] = c;
+  const tokens = {}, byName = {};
+  for (const t of spotMeta.tokens){ tokens[t.index] = t; if (!byName[t.name] || t.evmContract) byName[t.name] = t; }
+  const tokenPx = {0:{px:1, prev:1, coin:null, vol:Infinity, stable:true, pass:0}};
+  const setPx = pass => {
     for (const u of spotMeta.universe){
-      const [b, q] = u.tokens; const c = ctxByCoin[u.name];
+      const [b, q] = u.tokens, c = ctxByCoin[u.name];
       if (!c || b === 0) continue;
       if (pass === 1 && q !== 0) continue;
       if (pass === 2 && (q === 0 || !tokenPx[q] || (tokenPx[b] && tokenPx[b].pass === 1))) continue;
       const raw = +(c.midPx ?? c.markPx), rawPrev = +c.prevDayPx;
       if (!(raw > 0)) continue;
-      const vol = +c.dayNtlVlm || 0;
-      const cur = tokenPx[b];
+      const vol = +c.dayNtlVlm || 0, cur = tokenPx[b];
       if (cur && cur.pass === pass && cur.vol >= vol) continue;
       const qp = tokenPx[q];
       tokenPx[b] = {px: raw * qp.px, prev: (rawPrev > 0 ? rawPrev : raw) * qp.prev, coin: u.name, vol, pass};
     }
   };
-  setPx(1);
-  setPx(2);
-  const hypeIdx = spotMeta.tokens.find(t => t.name === "HYPE")?.index;
-  if (hypeIdx != null && !tokenPx[hypeIdx] && perpPx.HYPE) tokenPx[hypeIdx] = {px:perpPx.HYPE.px, prev:perpPx.HYPE.prev, coin:"HYPE", vol:0};
-  for (const t of spotMeta.tokens){ if (/^(USDC|USDT0|USDH|USDE|USDHL|FEUSD)$/i.test(t.name) && tokenPx[t.index]) tokenPx[t.index].stable = true; }
-  // Tokens not traded on Hyperliquid are priced from CoinGecko's free public API
-  const cgIds = [...new Set(ETH_TOKENS.filter(t => t.src.startsWith("cg:")).map(t => t.src.slice(3)))];
-  const cgPx = {};
-  if (cgIds.length){
-    try {
-      const r = await fetch("https://api.coingecko.com/api/v3/simple/price?ids=" + cgIds.join(",") + "&vs_currencies=usd&include_24hr_change=true");
-      if (r.ok){
-        const j = await r.json();
-        for (const id of cgIds){
-          const px = +j[id]?.usd; const chg = +j[id]?.usd_24h_change;
-          if (px > 0) cgPx[id] = {px, prev: isFinite(chg) ? px / (1 + chg/100) : px};
-        }
-      }
-    } catch {}
-  }
-  return {tokens, tokenPx, perpPx, cgPx, hypeIdx, hypeCoin: tokenPx[hypeIdx]?.coin || "HYPE"};
-}
+  setPx(1); setPx(2);
+  const hypeIdx = byName.HYPE?.index;
+  if (hypeIdx != null && !tokenPx[hypeIdx] && perpPx.HYPE) tokenPx[hypeIdx] = {px:perpPx.HYPE.px, prev:perpPx.HYPE.prev, coin:null, vol:0};
+  for (const t of spotMeta.tokens) if (/^(USDC|USDT0|USDH|USDE|USDHL|FEUSD)$/i.test(t.name) && tokenPx[t.index]) tokenPx[t.index].stable = true;
 
-function priceForSrc(src){
-  if (src.kind === "stable") return {px:1, prev:1};
-  if (src.kind === "perp") return market.perpPx[src.coin] || null;
-  if (src.kind === "spot") return market.tokenPx[src.idx] || null;
-  if (src.kind === "cg") return market.cgPx[src.id] || null;
+  const cgPx = Object.assign({}, store.json("cgLast") || {});
+  return {tokens, byName, tokenPx, perpPx, cgPx, hypeIdx};
+}
+/* ---- any-token pricing: GeckoTerminal finds the token (and its CoinGecko id if listed), CoinGecko prices listed ones ---- */
+const tokInfo = store.json("tokInfo") || {};
+async function gtLookup(net, addrs){
+  const now = Date.now();
+  const need = [...new Set(addrs.map(a => a.toLowerCase()))].filter(a => { const i = tokInfo[net + ":" + a]; return !i || now - i.at > (i.ok ? 10*MIN : 60*MIN); });
+  for (let i = 0; i < need.length; i += 30){
+    const chunk = need.slice(i, i + 30);
+    let j; try { j = await fetchJSON(GT + "/networks/" + net + "/tokens/multi/" + chunk.join(",") + "?include=top_pools", null, 15000); } catch { continue; }
+    const pools = {}; for (const p of (j.included || [])) pools[p.id] = p;
+    const seen = new Set();
+    for (const d of (j.data || [])){
+      const at = d.attributes || {}, addr = (at.address || "").toLowerCase(); seen.add(addr);
+      const pid = d.relationships?.top_pools?.data?.[0]?.id, pool = pools[pid];
+      const px = +at.price_usd || 0, ch = +(pool?.attributes?.price_change_percentage?.h24);
+      tokInfo[net + ":" + addr] = {at:now, ok:true, sym:at.symbol, dec:+at.decimals, cg:at.coingecko_coin_id || null, px,
+        prev: px && isFinite(ch) ? px / (1 + ch / 100) : px, res:+at.total_reserve_in_usd || 0, pool: pid ? pid.slice(pid.indexOf("_") + 1) : null};
+    }
+    for (const a of chunk) if (!seen.has(a)) tokInfo[net + ":" + a] = {at:now, ok:false};
+  }
+  const keys = Object.keys(tokInfo); if (keys.length > 400) for (const k of keys.slice(0, keys.length - 400)) delete tokInfo[k];
+  store.setJson("tokInfo", tokInfo);
+}
+async function cgPrices(ids){
+  ids = [...new Set(ids.filter(Boolean))]; if (!ids.length) return;
+  try {
+    const j = await fetchJSON("https://api.coingecko.com/api/v3/simple/price?ids=" + ids.join(",") + "&vs_currencies=usd&include_24hr_change=true", null, 10000);
+    for (const id of ids){ const px = +j[id]?.usd, ch = +j[id]?.usd_24h_change; if (px > 0) market.cgPx[id] = {px, prev: isFinite(ch) ? px / (1 + ch / 100) : px, at:Date.now()}; }
+    store.setJson("cgLast", market.cgPx);
+  } catch {}
+}
+function tokenPricing(net, addr, fallbackRate){
+  const i = tokInfo[net + ":" + addr.toLowerCase()];
+  if (i && i.ok && i.cg){ const p = market.cgPx[i.cg] || (i.px ? {px:i.px, prev:i.prev} : null); if (p) return {coin:"cg:" + i.cg, p}; }
+  if (i && i.ok && i.px > 0 && i.res >= MIN_LIQ) return {coin: i.pool ? "gt:" + net + ":" + i.pool + ":" + addr.toLowerCase() : null, p:{px:i.px, prev:i.prev}};
+  if (fallbackRate > 0) return {coin:null, p:{px:fallbackRate, prev:fallbackRate}};
   return null;
 }
+let ethPricing = {}; // symbol -> {stable, coin} for Ethereum tokens currently known
+const spotCoin = idx => { const p = market.tokenPx[idx]; return p && p.coin ? "hl:" + p.coin : null; };
+function ethTokenPricing(tk){
+  if (tk.src === "stable") return {stable:true, coin:null, p:{px:1, prev:1}};
+  if (tk.src.startsWith("cg:")){ const id = tk.src.slice(3); return {stable:false, coin:"cg:" + id, p:market.cgPx[id] || null}; }
+  return {stable:false, coin:"hl:" + tk.src, p:market.perpPx[tk.src] || null};
+}
 
-/* ---------- account data ---------- */
-async function loadAccount(){
+/* ============ account (current balances) ============ */
+async function loadAccount(full){
   const a = ADDR, errors = [];
   const hl = Promise.all([
     info({type:"clearinghouseState", user:a}),
@@ -439,308 +528,759 @@ async function loadAccount(){
     info({type:"userVaultEquities", user:a}).catch(() => []),
     info({type:"portfolio", user:a}).catch(() => null),
   ]);
-
-  // HyperEVM: native HYPE + linked tokens with a live price
+  // HIP-3 perp exchanges: scan all every 15 minutes, otherwise only the ones you use
+  const dexFull = full || !dexScan || dexScan.addr !== a || Date.now() - dexScan.at > 15*MIN;
+  const dexPart = (async () => {
+    const names = dexFull ? ((await info({type:"perpDexs"})) || []).filter(Boolean).map(x => x.name) : dexScan.active;
+    const res = await Promise.all(names.map(n => info({type:"clearinghouseState", user:a, dex:n}).then(r => [n, r]).catch(() => [n, null])));
+    const active = res.filter(([, r]) => r && (+(r.marginSummary?.accountValue || 0) > 0 || (r.assetPositions || []).length)).map(([n]) => n);
+    if (dexFull) dexScan = {addr:a, at:Date.now(), active};
+    const ctx = {};
+    await Promise.all(active.map(n => info({type:"metaAndAssetCtxs", dex:n}).then(([m, cs]) => {
+      m.universe.forEach((u, i) => { const c = cs[i]; if (!c) return; const px = +(c.midPx ?? c.markPx), prev = +c.prevDayPx; if (px > 0) ctx[u.name] = {px, prev: prev > 0 ? prev : px}; });
+    }).catch(() => {})));
+    return {accts: res.filter(([n]) => active.includes(n)), ctx};
+  })().catch(() => null);
   const evmTokens = [];
   for (const t of Object.values(market.tokens)){
     if (!t.evmContract || !t.evmContract.address) continue;
     const p = market.tokenPx[t.index];
-    if (!p) continue;
-    if (!p.stable && !(p.vol >= 250)) continue;
+    if (!p || (!p.stable && !(p.vol >= 250))) continue;
     evmTokens.push({t, dec: t.weiDecimals + (t.evmContract.evm_extra_wei_decimals || 0)});
   }
-  const evmCalls = [{method:"eth_getBalance", params:[a, "latest"]}]
-    .concat(evmTokens.map(x => ({method:"eth_call", params:[{to:x.t.evmContract.address, data:balanceOfData(a)}, "latest"]})));
-  const evm = rpcBatch(HYPEREVM_RPCS, evmCalls).catch(e => { errors.push("Couldn't reach a HyperEVM node, so HyperEVM balances are left out."); return null; });
-
-  const ethCalls = [{method:"eth_getBalance", params:[a, "latest"]}]
-    .concat(ETH_TOKENS.map(x => ({method:"eth_call", params:[{to:x.addr, data:balanceOfData(a)}, "latest"]})));
-  const eth = rpcBatch(ETH_RPCS, ethCalls).catch(e => { errors.push("Couldn't reach an Ethereum node, so Ethereum balances are left out."); return null; });
-
-  const [[ch, spot, deleg, vaults, portfolio], evmRes, ethRes] = await Promise.all([hl, evm, eth]);
+  const fullScan = full || !evmScan || evmScan.addr !== a || Date.now() - evmScan.at > 15*MIN;
+  if (!fullScan) evmTokens.splice(0, evmTokens.length, ...evmTokens.filter(x => evmScan.held.has(x.t.index)));
+  const evm = rpcBatch(HYPEREVM_RPCS, [{method:"eth_getBalance", params:[a, "latest"]}].concat(
+    evmTokens.map(x => ({method:"eth_call", params:[{to:x.t.evmContract.address, data:balanceOfData(a)}, "latest"]})),
+    EVM_EXTRA.map(x => ({method:"eth_call", params:[{to:x.addr, data:balanceOfData(a)}, "latest"]}))))
+    .catch(() => { errors.push("Couldn't reach a HyperEVM node, so HyperEVM balances are left out."); return null; });
+  const eth = rpcBatch(ETH_RPCS, [{method:"eth_getBalance", params:[a, "latest"]}].concat(
+    ETH_TOKENS.map(x => ({method:"eth_call", params:[{to:x.addr, data:balanceOfData(a)}, "latest"]}))))
+    .catch(() => { errors.push("Couldn't reach an Ethereum node, so Ethereum balances are left out."); return null; });
+  const bsTokens = fetchJSON("https://eth.blockscout.com/api/v2/addresses/" + a + "/token-balances", null, 15000)
+    .catch(() => { errors.push("Couldn't check Ethereum for less common tokens right now, so only major ones are shown."); return null; });
+  const [[ch, spot, deleg, vaults, portfolio], evmRes, ethRes, bsRes] = await Promise.all([hl, evm, eth, bsTokens]);
+  // Any other ERC-20 you hold on Ethereum (spam airdrops without real liquidity are left out)
+  const staticAddr = new Set(ETH_TOKENS.map(t => t.addr.toLowerCase()));
+  const found = (Array.isArray(bsRes) ? bsRes : []).filter(x => x.token && x.token.type === "ERC-20" && x.token.reputation !== "scam" && +x.value > 0 && !staticAddr.has((x.token.address_hash || x.token.address || "").toLowerCase()))
+    .map(x => ({addr:(x.token.address_hash || x.token.address).toLowerCase(), sym:x.token.symbol || "?", dec:+x.token.decimals || 18, raw:x.value, rate:+x.token.exchange_rate || 0}));
+  const evmExtraHeld = evmRes ? EVM_EXTRA.filter((x, i) => hexToNum(evmRes[1 + evmTokens.length + i], x.dec) > 0 && !x.asHype) : [];
+  await Promise.all([gtLookup("eth", found.map(f => f.addr)), evmExtraHeld.length ? gtLookup("hyperevm", evmExtraHeld.map(x => x.addr)) : null]);
+  await cgPrices(found.map(f => tokInfo["eth:" + f.addr]?.cg).concat(evmExtraHeld.map(x => tokInfo["hyperevm:" + x.addr.toLowerCase()]?.cg)));
 
   const holdings = [];
-  const add = (h) => { h.value = h.amt * h.px; h.prevValue = h.amt * h.prev; holdings.push(h); };
-
-  // Core spot
+  const add = h => {
+    h.id = h.loc + "|" + h.sym;
+    if (h.value == null){ h.value = h.amt * (h.px || 0); h.prevValue = h.amt * (h.prev || h.px || 0); }
+    holdings.push(h);
+  };
   for (const b of (spot?.balances || [])){
     const amt = +b.total; if (!amt) continue;
     const p = market.tokenPx[b.token];
-    add({sym:b.coin, loc:"Core spot", amt, px:p?.px || 0, prev:p?.prev || p?.px || 0, unpriced:!p, src:null});
+    const entry = +b.entryNtl || 0;
+    add({sym:b.coin, loc:"Core spot", amt, px:p?.px || 0, prev:p?.prev || p?.px || 0, unpriced:!p, stable:!!p?.stable, coin: p?.stable ? null : spotCoin(b.token), cost: !p?.stable && entry > 0 ? entry : null});
   }
-  // Perps
   const acct = +(ch?.marginSummary?.accountValue || 0);
-  const positions = [];
-  let perpDay = 0;
+  const positions = []; let perpDay = 0;
   for (const ap of (ch?.assetPositions || [])){
-    const p = ap.position; const szi = +p.szi; if (!szi) continue;
-    const m = market.perpPx[p.coin];
-    const d = m ? szi * (m.px - m.prev) : 0;
+    const p = ap.position, szi = +p.szi; if (!szi) continue;
+    const m = market.perpPx[p.coin], d = m ? szi * (m.px - m.prev) : 0;
     perpDay += d;
-    positions.push({coin:p.coin, szi, entry:+p.entryPx, upnl:+p.unrealizedPnl, value:+p.positionValue, lev:p.leverage?.value, day:d});
+    positions.push({coin:p.coin, szi, entry:+p.entryPx, upnl:+p.unrealizedPnl, value:+p.positionValue, lev:p.leverage?.value, mark:m?.px, roe:+p.returnOnEquity * 100, liq:+p.liquidationPx || 0});
   }
-  if (acct) holdings.push({sym:"USDC margin", loc:"Perps margin", amt:acct, px:1, prev:1, value:acct, prevValue:acct - perpDay, src:null, isMargin:true});
-  // Vaults
+  if (acct) add({sym:"USDC margin", loc:"Perps margin", amt:acct, px:1, prev:1, value:acct, prevValue:acct - perpDay, isMargin:true, stable:true});
+  const dex = await dexPart;
+  for (const [n, r] of (dex?.accts || [])){
+    const av = +(r.marginSummary?.accountValue || 0); let day = 0;
+    for (const ap of (r.assetPositions || [])){
+      const p = ap.position, szi = +p.szi; if (!szi) continue;
+      const m = dex.ctx[p.coin], d = m ? szi * (m.px - m.prev) : 0; day += d;
+      positions.push({coin:p.coin, szi, entry:+p.entryPx, upnl:+p.unrealizedPnl, value:+p.positionValue, lev:p.leverage?.value, mark:m?.px, roe:+p.returnOnEquity * 100, liq:+p.liquidationPx || 0});
+    }
+    if (av) add({sym:"Margin · " + n, loc:"Perps margin", amt:av, px:1, prev:1, value:av, prevValue:av - day, isMargin:true, stable:true});
+  }
   for (const v of (vaults || [])){
     const eq = +v.equity; if (!eq) continue;
-    holdings.push({sym:"Vault " + shortAddr(v.vaultAddress), loc:"Vaults", amt:eq, px:1, prev:1, value:eq, prevValue:eq, src:null, isMargin:true});
+    add({sym:"Vault " + shortAddr(v.vaultAddress), loc:"Vaults", amt:eq, px:1, prev:1, value:eq, prevValue:eq, isMargin:true, stable:true});
   }
-  // Staked HYPE
-  if (deleg){
+  const hp = market.tokenPx[market.hypeIdx];
+  if (deleg && hp){
     const st = (+deleg.delegated || 0) + (+deleg.undelegated || 0) + (+deleg.totalPendingWithdrawal || 0);
-    const p = market.tokenPx[market.hypeIdx];
-    if (st && p) add({sym:"HYPE", loc:"Staked HYPE", amt:st, px:p.px, prev:p.prev, src:{kind:"spot", idx:market.hypeIdx}});
+    if (st) add({sym:"HYPE", loc:"Staked HYPE", amt:st, px:hp.px, prev:hp.prev, coin:spotCoin(market.hypeIdx)});
   }
-  // HyperEVM
   if (evmRes){
-    const hp = market.tokenPx[market.hypeIdx];
+    if (fullScan) evmScan = {addr:a, at:Date.now(), held:new Set(evmTokens.filter((x, i) => hexToNum(evmRes[i + 1], x.dec) > 0).map(x => x.t.index))};
     const native = hexToNum(evmRes[0], 18);
-    if (native && hp) add({sym:"HYPE", loc:"HyperEVM", amt:native, px:hp.px, prev:hp.prev, src:{kind:"spot", idx:market.hypeIdx}});
+    if (native && hp) add({sym:"HYPE", loc:"HyperEVM", amt:native, px:hp.px, prev:hp.prev, coin:spotCoin(market.hypeIdx), evm:{native:true, dec:18}});
+    EVM_EXTRA.forEach((x, i) => {
+      const amt = hexToNum(evmRes[1 + evmTokens.length + i], x.dec); if (!amt) return;
+      if (x.asHype){ if (hp) add({sym:x.sym, loc:"HyperEVM", amt, px:hp.px, prev:hp.prev, coin:spotCoin(market.hypeIdx), evm:{address:x.addr, dec:x.dec}}); return; }
+      const pr = tokenPricing("hyperevm", x.addr, 0);
+      if (pr) add({sym:x.sym, loc:"HyperEVM", amt, px:pr.p.px, prev:pr.p.prev, coin:pr.coin, evm:{address:x.addr, dec:x.dec}});
+    });
     evmTokens.forEach((x, i) => {
-      const amt = hexToNum(evmRes[i+1], x.dec); if (!amt) return;
+      const amt = hexToNum(evmRes[i + 1], x.dec); if (!amt) return;
       const p = market.tokenPx[x.t.index];
-      add({sym:x.t.name, loc:"HyperEVM", amt, px:p.px, prev:p.prev, src: p.stable ? {kind:"stable"} : {kind:"spot", idx:x.t.index}});
+      add({sym:x.t.name, loc:"HyperEVM", amt, px:p.px, prev:p.prev, stable:!!p.stable, coin: p.stable ? null : spotCoin(x.t.index), evm:{address:x.t.evmContract.address, dec:x.dec}});
     });
   }
-  // Ethereum
+  ethPricing = {ETH:{stable:false, coin:"hl:ETH"}};
+  for (const tk of ETH_TOKENS){ const pr = ethTokenPricing(tk); ethPricing[tk.sym] = {stable:pr.stable, coin:pr.coin}; }
+  let hidden = 0; const ethFound = [];
+  for (const f of found){
+    const amt = hexToNum("0x" + BigInt(f.raw).toString(16), f.dec);
+    const pr = tokenPricing("eth", f.addr, f.rate);
+    if (!pr){ hidden++; continue; }
+    let sym = f.sym; if (ethPricing[sym]) sym = sym + " " + f.addr.slice(2, 6);
+    ethPricing[sym] = {stable:false, coin:pr.coin, addr:f.addr};
+    ethFound.push({addr:f.addr, sym, dec:f.dec});
+    add({sym, loc:"Ethereum", amt, px:pr.p.px, prev:pr.p.prev, coin:pr.coin, addr:f.addr});
+  }
   if (ethRes){
-    const e = market.perpPx.ETH;
-    const native = hexToNum(ethRes[0], 18);
-    if (native && e) add({sym:"ETH", loc:"Ethereum", amt:native, px:e.px, prev:e.prev, src:{kind:"perp", coin:"ETH"}});
+    const e = market.perpPx.ETH, native = hexToNum(ethRes[0], 18);
+    if (native && e) add({sym:"ETH", loc:"Ethereum", amt:native, px:e.px, prev:e.prev, coin:"hl:ETH"});
     ETH_TOKENS.forEach((tk, i) => {
-      const amt = hexToNum(ethRes[i+1], tk.dec); if (!amt) return;
-      const src = tk.src === "stable" ? {kind:"stable"} : tk.src.startsWith("cg:") ? {kind:"cg", id:tk.src.slice(3)} : {kind:"perp", coin:tk.src};
-      const p = priceForSrc(src);
-      if (!p){ if (src.kind === "cg") add({sym:tk.sym, loc:"Ethereum", amt, px:0, prev:0, unpriced:true, src:null}); return; }
-      add({sym:tk.sym, loc:"Ethereum", amt, px:p.px, prev:p.prev, src});
+      const amt = hexToNum(ethRes[i + 1], tk.dec); if (!amt) return;
+      const pr = ethTokenPricing(tk);
+      if (!pr.p){ add({sym:tk.sym, loc:"Ethereum", amt, px:0, prev:0, unpriced:true, coin:pr.coin}); return; }
+      add({sym:tk.sym, loc:"Ethereum", amt, px:pr.p.px, prev:pr.p.prev, stable:pr.stable, coin:pr.coin});
     });
   }
-
   const total = holdings.reduce((s, h) => s + h.value, 0);
   const prevTotal = holdings.reduce((s, h) => s + h.prevValue, 0);
-  const pmap = {};
-  if (Array.isArray(portfolio)) for (const [k, v] of portfolio) pmap[k] = v;
-  return {holdings, positions, portfolio:pmap, total, prevTotal, errors};
+  const coreNow = holdings.filter(h => CORE_LOCS.has(h.loc)).reduce((s, h) => s + h.value, 0);
+  const pmap = {}; if (Array.isArray(portfolio)) for (const [k, v] of portfolio) pmap[k] = v;
+  return {holdings, positions, portfolio:pmap, total, prevTotal, coreNow, errors, ethOk:!!ethRes, evmOk:!!evmRes, at:Date.now(), hidden, ethFound};
 }
 
-/* ---------- history ---------- */
-function pts(arr){ return (arr || []).map(([t, v]) => [+t, +v]).filter(p => isFinite(p[1])).sort((a,b) => a[0]-b[0]); }
-function interp(arr, t, before){
-  if (!arr.length) return 0;
-  if (t < arr[0][0]) return before === undefined ? arr[0][1] : before;
-  const last = arr[arr.length-1];
-  if (t >= last[0]) return last[1];
-  let lo = 0, hi = arr.length - 1;
-  while (hi - lo > 1){ const mid = (lo+hi) >> 1; if (arr[mid][0] <= t) lo = mid; else hi = mid; }
-  const [t0, v0] = arr[lo], [t1, v1] = arr[hi];
+/* ============ price history ============ */
+const SER = new Map(); // coin -> {key: {at, pts}}
+const HL_RES = {"15m":{ms:15*MIN, back:26*HOUR}, "1h":{ms:HOUR, back:8.5*DAY}, "4h":{ms:4*HOUR, back:140*DAY}, "1d":{ms:DAY, back:800*DAY}};
+const CG_DAYS = {"15m":"1", "1h":"90", "4h":"90", "1d":"365"};
+const ORDER_HL = ["15m", "1h", "4h", "1d"], ORDER_CG = ["1", "90", "365"];
+function resFor(from){ const now = Date.now(), r = ["15m", "1h"]; if (from < now - 8*DAY) r.push("4h"); if (from < now - 134*DAY) r.push("1d"); return r; }
+async function loadSeries(coin, res){
+  const isCg = coin.startsWith("cg:");
+  const key = isCg ? CG_DAYS[res] : res;
+  const m = SER.get(coin) || {}; SER.set(coin, m);
+  if (m[key] && Date.now() - m[key].at < 10*MIN) return;
+  let pts;
+  if (isCg){
+    const j = await fetchJSON("https://api.coingecko.com/api/v3/coins/" + coin.slice(3) + "/market_chart?vs_currency=usd&days=" + key, null, 15000);
+    pts = (j.prices || []).map(([t, p]) => [+t, +p]);
+  } else if (coin.startsWith("gt:")){
+    const [, net, pool, addr] = coin.split(":");
+    const tf = {"15m":["minute", 15, 110], "1h":["hour", 1, 210], "4h":["hour", 4, 850], "1d":["day", 1, 800]}[res];
+    const j = await fetchJSON(GT + "/networks/" + net + "/pools/" + pool + "/ohlcv/" + tf[0] + "?aggregate=" + tf[1] + "&limit=" + Math.min(1000, tf[2]) + "&currency=usd&token=" + addr, null, 15000);
+    pts = (j.data?.attributes?.ohlcv_list || []).map(r => [r[0] * 1000, +r[4]]);
+  } else {
+    const r = HL_RES[res];
+    const raw = await info({type:"candleSnapshot", req:{coin:coin.slice(3), interval:res, startTime:Math.floor(Date.now() - r.back), endTime:Date.now()}});
+    pts = [];
+    if (raw && raw.length) pts.push([+raw[0].t, +raw[0].o]);
+    for (const c of (raw || [])) pts.push([+c.T, +c.c]);
+  }
+  pts.sort((a, b) => a[0] - b[0]);
+  if (pts.length) m[key] = {at:Date.now(), pts};
+}
+async function ensureSeries(coins, from, resList){
+  const jobs = [];
+  for (const c of new Set(coins)) if (c) for (const r of (resList || resFor(from))){
+    if (c.startsWith("cg:") && jobs.some(j => j[0] === c && CG_DAYS[j[1]] === CG_DAYS[r])) continue;
+    jobs.push([c, r]);
+  }
+  await pool(jobs, 6, ([c, r]) => loadSeries(c, r));
+}
+function interpPts(pts, t){
+  if (t <= pts[0][0]) return pts[0][1];
+  const n = pts.length; if (t >= pts[n-1][0]) return pts[n-1][1];
+  let lo = 0, hi = n - 1;
+  while (hi - lo > 1){ const mid = (lo + hi) >> 1; if (pts[mid][0] <= t) lo = mid; else hi = mid; }
+  const [t0, v0] = pts[lo], [t1, v1] = pts[hi];
   return v0 + (v1 - v0) * (t - t0) / (t1 - t0);
 }
-async function candles(coin, iv, start){
-  const key = coin + "|" + iv + "|" + Math.floor(start / 36e5);
-  const hit = candleCache.get(key);
-  if (hit && Date.now() - hit.at < 10*60e3) return hit.data;
-  let data;
-  if (coin.startsWith("cg:")){
-    const days = Math.min(365, Math.ceil((Date.now() - start) / 864e5) + 1);
-    const r = await fetch("https://api.coingecko.com/api/v3/coins/" + coin.slice(3) + "/market_chart?vs_currency=usd&days=" + days);
-    if (!r.ok) throw new Error("CoinGecko " + r.status);
-    const j = await r.json();
-    data = (j.prices || []).map(([t, p]) => [+t, +p, +t]).sort((a,b) => a[0]-b[0]);
-  } else {
-    const raw = await info({type:"candleSnapshot", req:{coin, interval:iv, startTime:Math.floor(start), endTime:Date.now()}});
-    data = (raw || []).map(c => [+c.t, +c.c, +c.T]).sort((a,b) => a[0]-b[0]);
+function priceAt(coin, t){
+  const m = coin && SER.get(coin); if (!m) return null;
+  const cg = coin.startsWith("cg:"), order = cg ? ORDER_CG : ORDER_HL;
+  let best = null;
+  for (const k of order){
+    const s = m[k]; if (!s || !s.pts.length) continue;
+    const slack = cg ? 3*HOUR : (HL_RES[k]?.ms || HOUR) * 1.5;
+    if (t >= s.pts[0][0] && t <= s.pts[s.pts.length-1][0] + slack) return interpPts(s.pts, t);
+    if (!best || s.pts[0][0] < best.pts[0][0]) best = s;
   }
-  candleCache.set(key, {at:Date.now(), data});
-  return data;
+  return best ? interpPts(best.pts, t) : null;
 }
-function priceAt(cs, t){
-  if (!cs.length) return null;
-  if (t < cs[0][0]) return cs[0][1];
-  let lo = 0, hi = cs.length - 1;
-  while (lo < hi){ const mid = (lo + hi + 1) >> 1; if (cs[mid][0] <= t) lo = mid; else hi = mid - 1; }
-  return cs[lo][1];
+function seriesPts(coin, from){
+  const m = coin && SER.get(coin); if (!m) return [];
+  const order = coin.startsWith("cg:") ? ORDER_CG : ORDER_HL;
+  for (const k of order){ const s = m[k]; if (s && s.pts.length && s.pts[0][0] <= from + HOUR) return s.pts.filter(p => p[0] >= from); }
+  return [];
 }
-function walletHoldings(){ return snapshot.holdings.filter(h => !CORE_LOCS.has(h.loc) && h.src); }
-function srcCoin(src){
-  if (src.kind === "perp") return src.coin;
-  if (src.kind === "spot") return market.tokenPx[src.idx]?.coin || null;
-  if (src.kind === "cg") return "cg:" + src.id;
-  return null;
+
+/* ============ Hyperliquid account history (merged, transfer-aware) ============ */
+function mergeHistory(pf){
+  const srcs = ["allTime", "month", "week", "day"].map(k => pf[k]).filter(Boolean).map(p => {
+    const av = p.accountValueHistory || [], pn = p.pnlHistory || [], n = Math.min(av.length, pn.length), out = [];
+    for (let i = 0; i < n; i++) out.push({t:+av[i][0], av:+av[i][1], pnl:+pn[i][1]});
+    return out.sort((a, b) => a.t - b.t);
+  });
+  const pnlAt = (arr, t) => {
+    if (t <= arr[0].t) return arr[0].pnl;
+    for (let i = arr.length - 1; i >= 0; i--) if (arr[i].t <= t){
+      const a = arr[i], b = arr[i+1]; if (!b) return a.pnl;
+      return a.pnl + (b.pnl - a.pnl) * (t - a.t) / (b.t - a.t);
+    }
+    return arr[0].pnl;
+  };
+  let m = [];
+  for (const s of srcs){
+    if (!s.length) continue;
+    if (!m.length){ m = s.slice(); continue; }
+    const s0 = s[0].t, off = pnlAt(m, s0) - s[0].pnl;
+    m = m.filter(p => p.t < s0).concat(s.map(p => ({t:p.t, av:p.av, pnl:p.pnl + off})));
+  }
+  let k = 0; while (k < m.length && !(m[k].av > 0.5)) k++;
+  m = m.slice(k);
+  return {T:m.map(p => p.t), AV:m.map(p => p.av), PNL:m.map(p => p.pnl), F:m.map(p => p.av - p.pnl), steps:[]};
 }
-async function walletFn(iv, start){
-  const hs = walletHoldings();
-  const coins = [...new Set(hs.map(h => srcCoin(h.src)).filter(Boolean))];
-  const series = {};
-  await Promise.all(coins.map(async c => { try { series[c] = await candles(c, iv, start); } catch { series[c] = []; } }));
-  return (t) => {
+const SYS_HYPE = "0x2222222222222222222222222222222222222222";
+const isSys = a => a === SYS_HYPE || /^0x20{30}/.test(a);
+function parseLedger(l){
+  const d = l.delta || {}, t = +l.time, me = ADDR;
+  const hypePx = market.tokenPx[market.hypeIdx]?.px || 0;
+  switch (d.type){
+    case "deposit": return {t, usd:+d.usdc || 0, kind:"ext"};
+    case "withdraw": return {t, usd:-((+d.usdc || 0) + (+d.fee || 0)), kind:"ext"};
+    case "send": case "spotTransfer": case "internalTransfer": case "subAccountTransfer": {
+      const from = (d.user || "").toLowerCase(), to = (d.destination || "").toLowerCase();
+      if (from === me && to === me) return null;
+      const s = to === me ? 1 : from === me ? -1 : 0; if (!s) return null;
+      const other = s > 0 ? from : to;
+      const v = +(d.usdcValue ?? d.usdc ?? 0) || 0;
+      return {t, usd:s * v, kind: isSys(other) ? "evm" : "ext", token:d.token || "USDC", amount:+(d.amount ?? d.usdc ?? 0) || 0};
+    }
+    case "cStakingTransfer": return {t, usd:(d.isDeposit ? -1 : 1) * (+d.amount || 0) * hypePx, kind:"stake"};
+    default: return null;
+  }
+}
+async function loadLedger(start){
+  const all = []; let st = Math.max(0, Math.floor(start));
+  for (let k = 0; k < 6; k++){
+    const r = await info({type:"userNonFundingLedgerUpdates", user:ADDR, startTime:st});
+    if (!Array.isArray(r) || !r.length) break;
+    all.push(...r);
+    if (r.length < 500) break;
+    st = Math.max(...r.map(x => +x.time)) + 1;
+  }
+  return all.map(parseLedger).filter(Boolean).sort((a, b) => a.t - b.t);
+}
+function attachFlowSteps(H, events){
+  const n = H.T.length; H.steps = new Array(Math.max(0, n - 1)).fill(null);
+  const tol = 2*MIN; // the transfer log and the value history can be stamped a moment apart
+  for (let i = 0; i < n - 1; i++){
+    const d = H.F[i+1] - H.F[i];
+    if (Math.abs(d) < Math.max(5, 0.002 * H.AV[i])) continue;
+    const evs = events.filter(e => e.usd && e.t > H.T[i] - tol && e.t <= H.T[i+1] + tol);
+    if (!evs.length) continue;
+    const w = evs.map(e => Math.abs(e.usd) || 1), tw = w.reduce((a, b) => a + b, 0);
+    let c = 0; H.steps[i] = evs.map((e, x) => { c += w[x]; return [Math.min(H.T[i+1], Math.max(H.T[i] + 1, e.t)), c / tw]; });
+  }
+}
+function hIndex(T, t){ if (!T.length || t < T[0]) return -1; let lo = 0, hi = T.length - 1; while (lo < hi){ const m = (lo + hi + 1) >> 1; if (T[m] <= t) lo = m; else hi = m - 1; } return lo; }
+function coreAt(t){
+  const H = model.H, n = H.T.length;
+  if (!n || t < H.T[0]) return 0;
+  if (t >= H.T[n-1]){
+    let v = H.AV[n-1];
+    for (const e of (hist?.events || [])) if (e.t > H.T[n-1] + 2*MIN && e.t <= t) v += e.usd;
+    return Math.max(0, v);
+  }
+  const i = hIndex(H.T, t), f = (t - H.T[i]) / (H.T[i+1] - H.T[i]);
+  const pnl = H.PNL[i] + (H.PNL[i+1] - H.PNL[i]) * f;
+  const d = H.F[i+1] - H.F[i], st = H.steps[i];
+  let flow;
+  if (st){ let c = 0; for (const [et, cf] of st) if (et <= t) c = cf; flow = H.F[i] + d * c; }
+  else flow = H.F[i] + d * f;
+  return Math.max(0, pnl + flow);
+}
+function corePnlAt(t){
+  const H = model.H, n = H.T.length; if (!n) return 0;
+  if (t <= H.T[0]) return H.PNL[0];
+  if (t >= H.T[n-1]) return H.PNL[n-1];
+  const i = hIndex(H.T, t), f = (t - H.T[i]) / (H.T[i+1] - H.T[i]);
+  return H.PNL[i] + (H.PNL[i+1] - H.PNL[i]) * f;
+}
+
+/* ============ wallet balance history ============ */
+function stepFn(points, before){
+  return t => {
+    if (!points.length || t < points[0][0]) return before;
+    let lo = 0, hi = points.length - 1;
+    while (lo < hi){ const m = (lo + hi + 1) >> 1; if (points[m][0] <= t) lo = m; else hi = m - 1; }
+    return points[lo][1];
+  };
+}
+function walkBack(events, now){
+  events.sort((a, b) => a[0] - b[0]);
+  const pts = []; let b = now;
+  for (let i = events.length - 1; i >= 0; i--){ pts.unshift([events[i][0], Math.max(0, b)]); b -= events[i][1]; }
+  return stepFn(pts, Math.max(0, b));
+}
+async function blockscoutPages(path, maxPages){
+  const items = []; let params = null;
+  for (let i = 0; i < maxPages; i++){
+    let url = "https://eth.blockscout.com/api/v2/addresses/" + ADDR + path;
+    if (params){ const q = new URLSearchParams(); for (const k in params) if (params[k] != null) q.set(k, params[k]); url += (path.includes("?") ? "&" : "?") + q.toString(); }
+    const j = await fetchJSON(url, null, 20000);
+    items.push(...(j.items || []));
+    if (!j.next_page_params) break;
+    params = j.next_page_params;
+  }
+  return items;
+}
+async function ethHistory(fns, extras, out){
+  const cur = {}; for (const h of snapshot.holdings) if (h.loc === "Ethereum") cur[h.sym] = h.amt;
+  const byAddr = {}; for (const tk of ETH_TOKENS) byAddr[tk.addr.toLowerCase()] = tk;
+  for (const f of (snapshot.ethFound || [])) byAddr[f.addr] = {sym:f.sym, addr:f.addr, dec:f.dec, dyn:true};
+  const [items, coin] = await Promise.all([blockscoutPages("/token-transfers?type=ERC-20", 20), blockscoutPages("/coin-balance-history", 10)]);
+  // Tokens you held in the past but not now
+  const past = {};
+  for (const it of items){
+    const ad = (it.token?.address_hash || it.token?.address || "").toLowerCase();
+    if (!ad || byAddr[ad] || it.token?.reputation === "scam") continue;
+    past[ad] = {sym:it.token?.symbol || "?", dec:+(it.total?.decimals ?? it.token?.decimals ?? 18)};
+  }
+  const pastAddrs = Object.keys(past).slice(0, 30);
+  if (pastAddrs.length){
+    await gtLookup("eth", pastAddrs);
+    await cgPrices(pastAddrs.map(ad => tokInfo["eth:" + ad]?.cg));
+    out.pastPricing = {};
+    for (const ad of pastAddrs){
+      const pr = tokenPricing("eth", ad, 0); if (!pr || !pr.coin) continue;
+      let sym = past[ad].sym; if (ethPricing[sym] || out.pastPricing[sym]) sym = sym + " " + ad.slice(2, 6);
+      out.pastPricing[sym] = {stable:false, coin:pr.coin, px:pr.p.px};
+      byAddr[ad] = {sym, addr:ad, dec:past[ad].dec, dyn:true};
+    }
+  }
+  const ev = {}, moves = [];
+  for (const it of items){
+    const tk = byAddr[(it.token?.address_hash || it.token?.address || "").toLowerCase()]; if (!tk) continue;
+    const from = (it.from?.hash || "").toLowerCase(), to = (it.to?.hash || "").toLowerCase();
+    const amt = +(it.total?.value || 0) / Math.pow(10, +(it.total?.decimals ?? tk.dec));
+    let d = 0; if (to === ADDR) d += amt; if (from === ADDR) d -= amt;
+    if (d){ (ev[tk.sym] ||= []).push([Date.parse(it.timestamp), d]); moves.push({t:Date.parse(it.timestamp), sym:tk.sym, dq:d, tx:it.transaction_hash || it.tx_hash || ""}); }
+  }
+  for (const tk of Object.values(byAddr)){
+    if (!ev[tk.sym]) continue;
+    const fn = walkBack(ev[tk.sym], cur[tk.sym] || 0), id = "Ethereum|" + tk.sym;
+    fns[id] = fn;
+    if (!cur[tk.sym]){
+      const pr = ethSymPricing(tk.sym) || {}; const px = pr.coin ? (pr.px || priceAt(pr.coin, Date.now()) || 0) : (pr.stable ? 1 : 0);
+      if (pr.coin || pr.stable) extras.push({id, sym:tk.sym, loc:"Ethereum", amt:0, px, coin:pr.coin || null, stable:!!pr.stable, balFn:fn});
+    }
+  }
+  for (const i of coin){ const t = Date.parse(i.block_timestamp), d = +i.delta / 1e18; if (isFinite(t) && d) moves.push({t, sym:"ETH", dq:d, tx:i.transaction_hash || ""}); }
+  out.ethMoves = moves.sort((a, b) => a.t - b.t);
+  const pts = coin.map(i => [Date.parse(i.block_timestamp), +i.value / 1e18, +i.delta / 1e18]).filter(p => isFinite(p[0])).sort((a, b) => a[0] - b[0]);
+  if (pts.length){
+    const fn = stepFn(pts.map(p => [p[0], p[1]]), Math.max(0, pts[0][1] - pts[0][2]));
+    fns["Ethereum|ETH"] = fn;
+    if (!cur.ETH && market.perpPx.ETH) extras.push({id:"Ethereum|ETH", sym:"ETH", loc:"Ethereum", amt:0, px:market.perpPx.ETH.px, coin:"hl:ETH", stable:false, balFn:fn});
+  }
+}
+// Past HyperEVM balances: read at a block for each day you held the token, and just before and after
+// each move between HyperCore and HyperEVM. Old readings are cached on this device.
+async function evmHistory(fns, extras, events, from, out){
+  const now = Date.now(), toks = new Map();
+  for (const h of snapshot.holdings) if (h.loc === "HyperEVM" && h.evm)
+    toks.set(h.sym, {sym:h.sym, evm:h.evm, held:h, idx: h.evm.native ? market.hypeIdx : market.byName[h.sym]?.index, evs:[]});
+  for (const e of events){
+    if (e.kind !== "evm" || e.t < from - DAY) continue;
+    let tk = toks.get(e.token);
+    if (!tk){
+      if (e.token === "HYPE") tk = {sym:"HYPE", evm:{native:true, dec:18}, held:null, idx:market.hypeIdx, evs:[]};
+      else {
+        const t = market.byName[e.token]; if (!t || !t.evmContract) continue;
+        tk = {sym:e.token, evm:{address:t.evmContract.address, dec:t.weiDecimals + (t.evmContract.evm_extra_wei_decimals || 0)}, held:null, idx:t.index, evs:[]};
+      }
+      toks.set(e.token, tk);
+    }
+    tk.evs.push(e.t);
+  }
+  if (!toks.size) return;
+  const [bnHex] = await rpcBatch(HYPEREVM_RPCS, [{method:"eth_blockNumber", params:[]}]);
+  const bn = parseInt(bnHex, 16);
+  const nums = []; for (let k = 0; k <= 14; k++) nums.push(Math.max(1, bn - k * 1e6));
+  const blks = await rpcBatch(HYPEREVM_RPCS, nums.map(n => ({method:"eth_getBlockByNumber", params:["0x" + n.toString(16), false]})));
+  const anchors = blks.map((b, i) => b && b.timestamp ? [parseInt(b.timestamp, 16) * 1000, nums[i]] : null).filter(Boolean).sort((x, y) => x[0] - y[0]);
+  if (anchors.length < 2) throw new Error("no block times");
+  const ts = anchors[anchors.length - 1][0];
+  const blockAt = t => {
+    let i = 0; while (i < anchors.length - 2 && anchors[i + 1][0] < t) i++;
+    const [t0, n0] = anchors[i], [t1, n1] = anchors[i + 1];
+    return Math.max(1, Math.min(bn, Math.round(n0 + (n1 - n0) * (t - t0) / (t1 - t0))));
+  };
+  const cache = store.json("evmBal:" + ADDR) || {};
+  const fetchAt = async list => {
+    const plan = [];
+    for (const x of list){
+      const ck = x.tk.sym + "|" + x.q;
+      if (cache[ck] != null && x.q < now - 36*HOUR){ x.tk.vals.set(x.at, cache[ck]); continue; }
+      plan.push(x);
+    }
+    if (!plan.length) return;
+    const res = await rpcBatch(HYPEREVM_RPCS, plan.map(x => {
+      const tag = "0x" + blockAt(x.q).toString(16);
+      return x.tk.evm.native ? {method:"eth_getBalance", params:[ADDR, tag]} : {method:"eth_call", params:[{to:x.tk.evm.address, data:balanceOfData(ADDR)}, tag]};
+    }));
+    plan.forEach((x, k) => {
+      if (res[k] == null) return;
+      const v = hexToNum(res[k], x.tk.evm.dec);
+      x.tk.vals.set(x.at, v);
+      if (x.q < now - 36*HOUR) cache[x.tk.sym + "|" + x.q] = v;
+    });
+  };
+  const sec = t => Math.round(t / 1000) * 1000;
+  const first = [];
+  for (const tk of toks.values()){
+    tk.vals = new Map();
+    for (const et of tk.evs){ first.push({tk, q:sec(et - MIN), at:sec(et - MIN)}, {tk, q:sec(et + MIN), at:et}); }
+    if (tk.held) for (let t = Math.floor(from / DAY) * DAY; t < ts - HOUR; t += DAY) first.push({tk, q:t, at:t});
+  }
+  await fetchAt(first);
+  const second = [];
+  for (const tk of toks.values()){
+    if (tk.held) continue;
+    const evs = tk.evs.slice().sort((x, y) => x - y);
+    evs.forEach((et, k) => {
+      if (!(tk.vals.get(et) > 0)) return;
+      const end = k + 1 < evs.length ? evs[k + 1] - MIN : ts - HOUR;
+      for (let t = Math.ceil((et + MIN) / DAY) * DAY; t < end; t += DAY) second.push({tk, q:t, at:t});
+    });
+  }
+  await fetchAt(second);
+  const keys = Object.keys(cache); if (keys.length > 3000) for (const k of keys.slice(0, keys.length - 3000)) delete cache[k];
+  store.setJson("evmBal:" + ADDR, cache);
+  for (const tk of toks.values()){
+    const pts = [...tk.vals.entries()].sort((x, y) => x[0] - y[0]);
+    pts.push([Math.max(ts, now - MIN), tk.held ? tk.held.amt : 0]);
+    const id = "HyperEVM|" + tk.sym;
+    out.evmPts[id] = pts;
+    const fn = stepFn(pts, tk.held ? pts[0][1] : 0);
+    fns[id] = fn;
+    if (!tk.held && pts.some(p => p[1] > 0)){
+      const p = market.tokenPx[tk.idx];
+      if (p) extras.push({id, sym:tk.sym, loc:"HyperEVM", amt:0, px:p.px, coin: p.stable ? null : spotCoin(tk.idx), stable:!!p.stable, balFn:fn});
+    }
+  }
+}
+async function stakeHistory(fns, extras, out){
+  const evs = await info({type:"delegatorHistory", user:ADDR});
+  if (!Array.isArray(evs)) return;
+  const e = [];
+  for (const x of evs){
+    const d = x.delta || {};
+    if (d.cDeposit) e.push([+x.time, +d.cDeposit.amount]);
+    else if (d.withdrawal && d.withdrawal.phase === "finalized") e.push([+x.time, -(+d.withdrawal.amount)]);
+  }
+  if (!e.length) return;
+  out.stake = e.slice();
+  const h = snapshot.holdings.find(x => x.loc === "Staked HYPE");
+  const fn = walkBack(e, h ? h.amt : 0);
+  fns["Staked HYPE|HYPE"] = fn;
+  const p = market.tokenPx[market.hypeIdx];
+  if (!h && p) extras.push({id:"Staked HYPE|HYPE", sym:"HYPE", loc:"Staked HYPE", amt:0, px:p.px, coin:spotCoin(market.hypeIdx), stable:false, balFn:fn});
+}
+function walletItems(){
+  const items = snapshot.holdings.filter(h => !CORE_LOCS.has(h.loc) && !h.unpriced && (h.coin || h.stable || h.px > 0))
+    .map(h => ({id:h.id, sym:h.sym, loc:h.loc, amt:h.amt, px:h.px, coin:h.coin, stable:!!h.stable, balFn: hist?.fns[h.id] || null}));
+  for (const x of (hist?.extras || [])) if (!items.some(i => i.id === x.id)) items.push(x);
+  return items;
+}
+
+/* ============ history loading ============ */
+async function loadHistory(){
+  const notes = [], now = Date.now();
+  const H0 = mergeHistory(snapshot.portfolio);
+  const dataStart = H0.T.length ? H0.T[0] : now - 120*DAY;
+  const from = Math.max(now - 130*DAY, dataStart - 2*DAY);
+  let events = [];
+  try { events = await loadLedger(from - DAY); } catch { notes.push("Couldn't load your Hyperliquid transfer log, so transfers may show as short spikes on the chart."); }
+  const fns = {}, extras = [], out = {ethMoves:null, evmPts:{}, stake:null};
+  await Promise.all([
+    snapshot.ethOk ? ethHistory(fns, extras, out).catch(() => notes.push("Couldn't load your Ethereum history, so past Ethereum values assume today's balances.")) : null,
+    snapshot.evmOk ? evmHistory(fns, extras, events, from, out).catch(() => notes.push("Couldn't load past HyperEVM balances, so past HyperEVM values assume today's balances.")) : null,
+    stakeHistory(fns, extras, out).catch(() => {}),
+  ]);
+  hist = {at:Date.now(), addr:ADDR, events, fns, extras, notes, from, dataStart, out};
+}
+function calStartFor(dataStart){
+  const today0 = new Date(); today0.setHours(0, 0, 0, 0);
+  const earliest = new Date(today0); earliest.setDate(today0.getDate() - (today0.getDay() + 6) % 7 - 17*7);
+  const ds = new Date(dataStart); ds.setHours(0, 0, 0, 0);
+  const dsMon = new Date(ds); dsMon.setDate(ds.getDate() - (ds.getDay() + 6) % 7);
+  return dsMon > earliest ? dsMon : earliest;
+}
+async function ensureAllSeries(){
+  const items = walletItems();
+  const H = mergeHistory(snapshot.portfolio);
+  const dataStart = H.T.length ? H.T[0] : Date.now() - 120*DAY;
+  const earliest = Math.min(calStartFor(dataStart).getTime(), dataStart);
+  const coins = items.filter(i => !i.stable && i.coin).map(i => i.coin);
+  const visible = snapshot.holdings.filter(h => h.coin && h.value >= SMALL).map(h => h.coin).filter(c => !coins.includes(c));
+  const moves = hist?.out?.ethMoves || [];
+  const costCoins = [...new Set(moves.map(m => ethSymPricing(m.sym)).filter(p => p && !p.stable).map(p => p.coin))];
+  const costFrom = moves.length ? Math.max(Date.now() - 790*DAY, moves[0].t - DAY) : Date.now();
+  await Promise.all([ensureSeries(coins, earliest), ensureSeries(visible, Date.now() - 8*DAY, ["1h"]), costCoins.length ? ensureSeries(costCoins, costFrom) : null]);
+}
+
+/* ============ cost basis (average entry) ============ */
+function ethSymPricing(sym){
+  return ethPricing[sym] || hist?.out?.pastPricing?.[sym] || null;
+}
+const pxOf = (pr, t) => !pr ? null : pr.stable ? 1 : priceAt(pr.coin, t);
+// Average-cost method: buys add their cost, sells remove cost in proportion to the amount sold.
+function avgCostRun(steps){
+  let q = 0, c = 0;
+  for (const st of steps){
+    if (st.dq > 0){ q += st.dq; c += st.cost; }
+    else if (st.dq < 0 && q > 0){ const f = Math.min(1, -st.dq / q); c -= c * f; q += st.dq; if (q < 1e-12){ q = 0; c = 0; } }
+  }
+  return {q, c};
+}
+function computeCosts(){
+  const res = {};
+  const moves = hist?.out?.ethMoves;
+  if (moves && moves.length){
+    const byTx = {}; for (const m of moves) if (m.tx) (byTx[m.tx] ||= []).push(m);
+    const steps = {};
+    for (const m of moves){
+      const pr = ethSymPricing(m.sym); if (!pr || pr.stable) continue;
+      let cost = null;
+      if (m.dq > 0){
+        // Bought in a swap: cost is what left the wallet in the same transaction
+        const same = m.tx ? byTx[m.tx] : [];
+        const outs = same.filter(x => x.dq < 0 && x.sym !== m.sym), ins = same.filter(x => x.dq > 0);
+        if (outs.length && ins.length === 1){
+          let v = 0, ok = true;
+          for (const o of outs){ const p = pxOf(ethSymPricing(o.sym), m.t); if (p == null){ ok = false; break; } v += -o.dq * p; }
+          if (ok && v > 0) cost = v;
+        }
+        if (cost == null){ const p = pxOf(pr, m.t); if (p == null) continue; cost = m.dq * p; }
+      }
+      (steps[m.sym] ||= []).push({t:m.t, dq:m.dq, cost});
+    }
+    for (const sym in steps){
+      const id = "Ethereum|" + sym, arr = steps[sym];
+      const fn = hist.fns[id], b0 = fn ? fn(arr[0].t - 1) : 0;
+      if (b0 > 0){ const p = pxOf(ethSymPricing(sym), arr[0].t); if (p != null) arr.unshift({t:arr[0].t - 1, dq:b0, cost:b0 * p}); }
+      res[id] = avgCostRun(arr);
+    }
+  }
+  const fromPoints = (pts, coin) => {
+    const arr = []; let prev = 0;
+    for (const [t, v] of pts){
+      const d = v - prev;
+      if (Math.abs(d) > 1e-12){
+        if (d > 0){ const p = priceAt(coin, t); if (p == null) continue; arr.push({t, dq:d, cost:d * p}); }
+        else arr.push({t, dq:d});
+      }
+      prev = v;
+    }
+    return avgCostRun(arr);
+  };
+  for (const id in (hist?.out?.evmPts || {})){
+    const h = snapshot.holdings.find(x => x.id === id);
+    if (h && h.coin) res[id] = fromPoints(hist.out.evmPts[id], h.coin);
+  }
+  if (hist?.out?.stake){
+    const h = snapshot.holdings.find(x => x.id === "Staked HYPE|HYPE"), fn = hist.fns["Staked HYPE|HYPE"];
+    if (h && h.coin && fn){
+      const ev = hist.out.stake.slice().sort((a, b) => a[0] - b[0]);
+      const pts = [[ev[0][0] - 1, fn(ev[0][0] - 1)]].concat(ev.map(([t]) => [t, fn(t)]));
+      res[h.id] = fromPoints(pts, h.coin);
+    }
+  }
+  for (const h of snapshot.holdings){
+    if (h.stable || h.isMargin || h.unpriced){ h.cost = null; continue; }
+    if (h.loc !== "Core spot"){ const r = res[h.id]; h.cost = r && r.q > 0 && r.c > 0 ? r.c / r.q * h.amt : null; }
+  }
+}
+function costFields(h){
+  if (!(h.cost > 0) || !(h.amt > 0)) return null;
+  const upnl = h.value - h.cost;
+  return {avg: h.cost / h.amt, cost: h.cost, upnl, pct: upnl / h.cost * 100};
+}
+
+/* ============ model: value + P&L at any time ============ */
+function buildModel(){
+  const H = mergeHistory(snapshot.portfolio);
+  attachFlowSteps(H, hist ? hist.events : []);
+  const items = walletItems();
+  const dataStart = H.T.length ? H.T[0] : (hist?.dataStart || Date.now() - 120*DAY);
+  model = {H, items, dataStart};
+  const now = Date.now();
+  const bal = (it, t) => it.balFn ? it.balFn(t) : it.amt;
+  const px = (it, t) => { if (t >= now - MIN) return it.px || priceAt(it.coin, t) || 0; const p = priceAt(it.coin, t); return p ?? it.px ?? 0; };
+  model.walletAt = t => { let s = 0; for (const it of items){ const a = bal(it, t); if (!a) continue; s += it.stable ? a : a * px(it, t); } return s; };
+  model.walletMove = (t0, t1, step) => {
     let s = 0;
-    for (const h of hs){
-      if (h.src.kind === "stable"){ s += h.amt; continue; }
-      const c = srcCoin(h.src); const p = c && series[c] ? priceAt(series[c], t) : null;
-      s += h.amt * (p ?? h.px);
+    for (let a = t0; a < t1; a += step){
+      const b = Math.min(t1, a + step);
+      for (const it of items){ if (it.stable) continue; const q = bal(it, a); if (!q) continue; s += q * (px(it, b) - px(it, a)); }
     }
     return s;
   };
+  model.totalAt = t => t >= now - MIN ? snapshot.total : coreAt(t) + model.walletAt(t);
+  model.pnl = (t0, t1, step) => (corePnlAt(t1) - corePnlAt(t0)) + model.walletMove(t0, t1, step);
+  model.ranges = {}; for (const k of Object.keys(RANGES)) model.ranges[k] = buildRange(k);
+  model.days = buildDays();
+  computeCosts();
 }
-function corePts(key){
-  const p = snapshot.portfolio[key];
-  return {av: pts(p?.accountValueHistory), pnl: pts(p?.pnlHistory)};
-}
-async function buildRange(r){
-  const cfg = RANGES[r];
-  const cacheKey = r + "|" + lastLoad;
-  if (seriesCache.has(cacheKey)) return seriesCache.get(cacheKey);
-  const now = Date.now();
-  const {av} = corePts(cfg.key);
-  let start = now - cfg.span;
-  if (r === "All"){ start = av.length ? Math.max(av[0][0], now - cfg.span) : now - 365*864e5; }
-  start = Math.floor(start / cfg.ms) * cfg.ms;
-  const wal = await walletFn(cfg.iv, start);
-  const coreNow = snapshot.holdings.filter(h => CORE_LOCS.has(h.loc)).reduce((s,h) => s + h.value, 0);
-  const walNow = snapshot.total - coreNow;
+function markerEvents(t0, t1){
+  const evs = (hist?.events || []).filter(e => e.kind === "ext" && e.t >= t0 && e.t <= t1 && e.usd);
   const out = [];
-  const firstCore = av.length ? av[0][0] : Infinity;
-  for (let t = start; t < now - cfg.ms/4; t += cfg.ms){
-    const core = interp(av, t);
-    const w = wal(t);
-    out.push({t, core, wallet:w, total: core + w});
+  for (const e of evs){
+    const last = out[out.length - 1];
+    if (last && e.t - last.t < 15*MIN){ last.usd += e.usd; continue; }
+    out.push({t:e.t, usd:e.usd});
   }
-  out.push({t:now, core:coreNow, wallet:walNow, total:snapshot.total});
-  seriesCache.set(cacheKey, out);
-  return out;
+  return out.filter(e => Math.abs(e.usd) >= Math.max(20, snapshot.total * 0.002));
 }
-async function buildDaily(){
-  const cacheKey = "daily|" + lastLoad;
-  if (seriesCache.has(cacheKey)) return seriesCache.get(cacheKey);
-  const now = new Date();
-  const today0 = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const dow = (today0.getDay() + 6) % 7; // Monday = 0
-  const firstMonday = new Date(today0); firstMonday.setDate(today0.getDate() - dow - 17*7);
-  const start = firstMonday.getTime() - 864e5;
-  // merge allTime (older) with month (finer) for PnL and account value
-  const all = corePts("allTime"), mon = corePts("month");
-  const cut = mon.pnl.length ? mon.pnl[0][0] : Infinity;
-  const pnl = all.pnl.filter(p => p[0] < cut).concat(mon.pnl);
-  const cutA = mon.av.length ? mon.av[0][0] : Infinity;
-  const av = all.av.filter(p => p[0] < cutA).concat(mon.av);
-  const wal = await walletFn("4h", start);
+function buildRange(key){
+  const cfg = RANGES[key], now = Date.now(), ds = model.dataStart;
+  let start = Math.max(now - cfg.span, ds);
+  const span = now - start;
+  const step = cfg.step || (span <= 14*DAY ? HOUR : span <= 120*DAY ? 4*HOUR : DAY);
+  start = Math.ceil(start / step) * step;
+  const pts = [];
+  for (let t = start; t < now - step/4; t += step){ const core = coreAt(t), wallet = model.walletAt(t); pts.push({t, core, wallet, v:core + wallet}); }
+  pts.push({t:now, core:snapshot.coreNow, wallet:snapshot.total - snapshot.coreNow, v:snapshot.total, now:true});
+  const t0 = pts[0].t, startV = pts[0].v, endV = snapshot.total;
+  const pnl = model.pnl(t0, now, Math.min(step, 4*HOUR));
+  const flows = endV - startV - pnl;
+  const base = startV > 0.05 * endV ? startV : Math.max(1, endV - pnl);
+  return {key, pts, t0, startV, endV, pnl, flows, pct: pnl / base * 100, markers: markerEvents(t0, now)};
+}
+function buildDays(){
+  const now = Date.now(), ds = model.dataStart, H = model.H;
+  const today0 = new Date(); today0.setHours(0, 0, 0, 0);
   const days = [];
-  const firstCore = av.length ? av[0][0] : Infinity;
-  for (let d = new Date(firstMonday); d <= today0; d.setDate(d.getDate() + 1)){
-    const t0 = d.getTime();
-    const t1 = Math.min(new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1).getTime(), Date.now());
+  for (let d = calStartFor(ds); d <= today0; d.setDate(d.getDate() + 1)){
+    const t0 = d.getTime(), t1 = Math.min(new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1).getTime(), now);
     const isToday = t0 === today0.getTime();
-    const core0 = t0 < firstCore ? 0 : interp(av, t0, 0);
-    const w0 = wal(t0), w1 = isToday ? snapshot.holdings.filter(h => !CORE_LOCS.has(h.loc)).reduce((s,h)=>s+h.value,0) : wal(t1);
-    const pnlD = interp(pnl, t1) - interp(pnl, t0);
-    const change = pnlD + (w1 - w0);
-    const base = core0 + w0;
-    days.push({t:t0, change, pct: base > 1 ? change / base * 100 : (change ? NaN : 0), base, isToday, hasData: base > 1 || Math.abs(change) > 0.005});
+    if (t1 <= ds){ days.push({t:t0, hasData:false, isToday}); continue; }
+    const a = Math.max(t0, ds);
+    const change = model.pnl(a, t1, 2*HOUR);
+    const endV = model.totalAt(t1), startV = model.totalAt(a);
+    const base = Math.max(startV, endV - change);
+    let coarse = false;
+    if (H.T.length && t1 > H.T[0]){
+      const i = hIndex(H.T, t1), inside = H.T.some(x => x >= t0 && x <= t1);
+      if (!inside && i >= 0 && i < H.T.length - 1 && H.T[i+1] - H.T[i] > 48*HOUR) coarse = true;
+    }
+    days.push({t:t0, change, pct: base > 1 ? change / base * 100 : NaN, base, isToday, coarse, hasData: base > 1});
   }
-  seriesCache.set(cacheKey, days);
   return days;
 }
 
-/* ---------- render: hero ---------- */
-function renderHero(){
-  const {total, prevTotal} = snapshot;
-  const whole = Math.floor(total), cents = Math.round((total - whole) * 100).toString().padStart(2, "0");
-  $("total").innerHTML = "";
-  const w = document.createElement("span"); w.textContent = usd0.format(whole).replace(/\.00$/, "");
-  const c = document.createElement("span"); c.className = "cents"; c.textContent = total >= 1e5 ? "" : "." + (cents === "100" ? "99" : cents);
-  $("total").append(w, c);
-  const ch = total - prevTotal, pct = prevTotal > 0 ? ch / prevTotal * 100 : 0;
-  const pill = $("dayPill");
-  pill.className = "pill num " + dirClass(ch);
-  pill.textContent = fmtSigned(ch) + "  " + fmtPct(pct);
+/* ============ rendering: hero ============ */
+function renderTotal(){
+  const total = snapshot.total, whole = Math.floor(total);
+  const cents = Math.min(99, Math.round((total - whole) * 100)).toString().padStart(2, "0");
+  const e = $("total"); e.innerHTML = "";
+  const w = document.createElement("span"); w.textContent = usd0.format(whole); e.appendChild(w);
+  if (total < 1e5){ const c = document.createElement("span"); c.className = "cents"; c.textContent = "." + cents; e.appendChild(c); }
   $("dot").classList.remove("stale");
+}
+function renderPnlStrip(){
+  const strip = $("pnlStrip"); strip.innerHTML = "";
+  const cells = [["24H", model?.ranges["1D"]], ["7D", model?.ranges["1W"]], ["30D", model?.ranges["1M"]]];
+  for (const [k, r] of cells){
+    const c = document.createElement("div"); c.className = "pnl-cell";
+    c.innerHTML = '<span class="k"></span><span class="v"></span><span class="p"></span>';
+    c.children[0].textContent = k;
+    if (r){ c.children[1].textContent = fmtPnl(r.pnl); c.children[1].className = "v " + dirT(r.pnl); c.children[2].textContent = fmtPct(r.pct); c.children[2].className = "p " + dirT(r.pnl); }
+    else if (k === "24H" && snapshot){ const d = snapshot.total - snapshot.prevTotal; c.children[1].textContent = fmtPnl(d); c.children[1].className = "v " + dirT(d); c.children[2].textContent = "estimate"; c.children[2].className = "p sub"; }
+    else { c.children[1].className = "v skel"; c.children[1].style.height = "18px"; c.children[2].innerHTML = "&nbsp;"; }
+    strip.appendChild(c);
+  }
 }
 function renderUpdated(){
   if (!lastLoad) return;
   const s = Math.round((Date.now() - lastLoad) / 1000);
-  $("updated").textContent = "Updated " + (s < 10 ? "just now" : s < 60 ? s + "s ago" : Math.round(s/60) + " min ago") + " · refreshes every minute";
+  $("updated").textContent = "Updated " + (s < 10 ? "just now" : s < 60 ? s + "s ago" : Math.round(s / 60) + " min ago");
   $("dot").classList.toggle("stale", s > 180);
 }
 
-/* ---------- render: chart ---------- */
-function niceStep(span, n){
-  const raw = span / n, mag = Math.pow(10, Math.floor(Math.log10(raw))), e = raw / mag;
-  return (e >= 7.5 ? 10 : e >= 3.5 ? 5 : e >= 1.5 ? 2 : 1) * mag;
-}
+/* ============ rendering: line chart ============ */
 const NS = "http://www.w3.org/2000/svg";
-function el(tag, attrs, parent){ const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (parent) parent.appendChild(e); return e; }
-function fmtDate(t, r, withTime){
-  const d = new Date(t);
-  if (withTime && r !== "All") return d.toLocaleString("en-US", {weekday:"short", month:"short", day:"numeric", hour:"numeric"});
-  if (r === "All") return d.toLocaleDateString("en-US", {month:"short", day:"numeric", year:"numeric"});
-  return d.toLocaleDateString("en-US", {weekday: r === "7D" ? "short" : undefined, month:"short", day:"numeric"});
-}
-async function renderChart(){
-  const box = $("chartBox");
-  let data;
-  try { data = await buildRange(range); } catch (e){ box.innerHTML = '<div class="banner err">Couldn\'t load price history. Tap refresh to try again.</div>'; return; }
-  const first = data.find(p => p.total > 0) || data[0], last = data[data.length-1];
-  const ch = last.total - first.total, pct = first.total > 0 ? ch / first.total * 100 : 0;
-  $("rangeChange").innerHTML = "";
-  const pill = document.createElement("span"); pill.className = "pill num " + dirClass(ch); pill.textContent = fmtSigned(ch) + "  " + fmtPct(pct);
-  const lbl = document.createElement("span"); lbl.textContent = "value change, " + (range === "All" ? "since " + fmtDate(first.t, "All") : "past " + range) + " · includes deposits";
-  $("rangeChange").append(pill, lbl);
-
+function svgEl(tag, attrs, parent){ const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (parent) parent.appendChild(e); return e; }
+function niceStep(span, n){ const raw = span / n, mag = Math.pow(10, Math.floor(Math.log10(raw))), e = raw / mag; return (e >= 7.5 ? 10 : e >= 3.5 ? 5 : e >= 1.5 ? 2 : 1) * mag; }
+function lineChart(box, data, o){
   box.innerHTML = "";
+  if (data.length < 2) return;
   const W = box.clientWidth || 340, H = box.clientHeight || 220;
-  const padR = 46, padT = 10, padB = 22, plotW = W - padR, plotH = H - padT - padB;
-  let lo = Math.min(...data.map(p => p.total)), hi = Math.max(...data.map(p => p.total));
-  if (hi - lo < Math.max(1, hi * 0.002)){ const m = Math.max(1, hi * 0.01); lo -= m; hi += m; }
+  const padR = 52, padT = 8, padB = 22, plotW = W - padR, plotH = H - padT - padB;
+  const vals = data.map(p => p.v);
+  let lo = Math.min(...vals), hi = Math.max(...vals);
+  if (hi - lo < Math.max(1e-9, Math.abs(hi) * 0.002)){ const m = Math.max(Math.abs(hi) * 0.01, 1e-6); lo -= m; hi += m; }
   const step = niceStep(hi - lo, 3);
   lo = Math.floor(lo / step) * step; hi = Math.ceil(hi / step) * step;
-  if (lo < 0 && Math.min(...data.map(p=>p.total)) >= 0) lo = 0;
-  const t0 = data[0].t, t1 = last.t;
+  if (lo < 0 && Math.min(...vals) >= 0) lo = 0;
+  const t0 = data[0].t, t1 = data[data.length - 1].t;
   const x = t => (t - t0) / Math.max(1, t1 - t0) * plotW;
-  const y = v => padT + (1 - (v - lo) / Math.max(1e-9, hi - lo)) * plotH;
-  const svg = el("svg", {viewBox:`0 0 ${W} ${H}`, role:"img", "aria-label":`Net worth over ${range}, from ${fmtUsd(first.total)} to ${fmtUsd(last.total)}`});
-  const color = ch >= 0 ? "var(--up)" : "var(--down)";
-  const defs = el("defs", {}, svg);
-  const gid = "g" + Math.random().toString(36).slice(2, 7);
-  const grad = el("linearGradient", {id:gid, x1:0, y1:0, x2:0, y2:1}, defs);
-  el("stop", {offset:"0%", "stop-color":color, "stop-opacity":0.22}, grad);
-  el("stop", {offset:"100%", "stop-color":color, "stop-opacity":0}, grad);
-  for (let v = lo; v <= hi + step/2; v += step){
-    el("line", {x1:0, x2:plotW, y1:y(v), y2:y(v), class:"grid-line"}, svg);
-    const tx = el("text", {x:plotW + 6, y:y(v) + 3.5, class:"axis-t"}, svg); tx.textContent = fmtCompact(v);
+  const y = v => padT + (1 - (v - lo) / Math.max(1e-12, hi - lo)) * plotH;
+  const svg = svgEl("svg", {viewBox:`0 0 ${W} ${H}`, role:"img", "aria-label":o.label || "Chart"});
+  const gid = "g" + Math.random().toString(36).slice(2, 8);
+  const grad = svgEl("linearGradient", {id:gid, x1:0, y1:0, x2:0, y2:1}, svgEl("defs", {}, svg));
+  svgEl("stop", {offset:"0%", "stop-color":o.color, "stop-opacity":0.22}, grad);
+  svgEl("stop", {offset:"100%", "stop-color":o.color, "stop-opacity":0}, grad);
+  for (let v = lo; v <= hi + step / 2; v += step){
+    svgEl("line", {x1:0, x2:plotW, y1:y(v), y2:y(v), class:"grid-line"}, svg);
+    svgEl("text", {x:plotW + 6, y:y(v) + 3.5, class:"axis-t"}, svg).textContent = (o.yfmt || fmtCompact)(v);
   }
   const nX = W < 380 ? 3 : 4;
   for (let i = 0; i < nX; i++){
     const t = t0 + (t1 - t0) * (i + 0.5) / nX;
-    const tx = el("text", {x:x(t), y:H - 6, class:"axis-t", "text-anchor":"middle"}, svg);
-    tx.textContent = new Date(t).toLocaleDateString("en-US", range === "All" ? {month:"short", year:"2-digit"} : range === "7D" ? {weekday:"short", day:"numeric"} : {month:"short", day:"numeric"});
+    svgEl("text", {x:x(t), y:H - 5, class:"axis-t", "text-anchor":"middle"}, svg).textContent = o.xfmt(t);
   }
-  const line = data.map((p, i) => (i ? "L" : "M") + x(p.t).toFixed(1) + " " + y(p.total).toFixed(1)).join(" ");
-  el("path", {d: line + ` L${plotW} ${padT+plotH} L0 ${padT+plotH} Z`, fill:`url(#${gid})`, stroke:"none"}, svg);
-  el("path", {d: line, fill:"none", stroke:color, "stroke-width":2, "stroke-linejoin":"round", "stroke-linecap":"round"}, svg);
-  el("circle", {cx:x(last.t), cy:y(last.total), r:4, fill:color, stroke:"var(--surface)", "stroke-width":2}, svg);
-  const cross = el("line", {y1:padT, y2:padT+plotH, stroke:"var(--muted)", "stroke-width":1, "stroke-dasharray":"3 3", visibility:"hidden"}, svg);
-  const dot = el("circle", {r:5, fill:color, stroke:"var(--surface)", "stroke-width":2, visibility:"hidden"}, svg);
+  if (o.ref && o.ref.v >= lo && o.ref.v <= hi){
+    svgEl("line", {x1:0, x2:plotW, y1:y(o.ref.v), y2:y(o.ref.v), stroke:"var(--accent)", "stroke-width":1, "stroke-dasharray":"4 4"}, svg);
+    const lbl = svgEl("text", {x:4, y:y(o.ref.v) - 5, class:"axis-t"}, svg); lbl.textContent = o.ref.label; lbl.setAttribute("fill", "var(--accent)");
+  }
+  const line = data.map((p, i) => (i ? "L" : "M") + x(p.t).toFixed(1) + " " + y(p.v).toFixed(1)).join(" ");
+  svgEl("path", {d: line + ` L${x(t1).toFixed(1)} ${padT + plotH} L0 ${padT + plotH} Z`, fill:`url(#${gid})`, stroke:"none"}, svg);
+  svgEl("path", {d:line, fill:"none", stroke:o.color, "stroke-width":2, "stroke-linejoin":"round", "stroke-linecap":"round"}, svg);
+  for (const m of (o.markers || [])){
+    const mx = x(m.t), my = padT + plotH;
+    svgEl("line", {x1:mx, x2:mx, y1:padT, y2:my, stroke:"var(--ink-2)", "stroke-opacity":0.2, "stroke-width":1}, svg);
+    svgEl("rect", {x:mx - 3.5, y:my - 3.5, width:7, height:7, fill:"var(--ink-2)", transform:`rotate(45 ${mx} ${my})`}, svg);
+  }
+  const last = data[data.length - 1];
+  svgEl("circle", {cx:x(last.t), cy:y(last.v), r:4, fill:o.color, stroke:"var(--surface)", "stroke-width":2}, svg);
+  const cross = svgEl("line", {y1:padT, y2:padT + plotH, stroke:"var(--ink-2)", "stroke-width":1, "stroke-dasharray":"3 3", visibility:"hidden"}, svg);
+  const dot = svgEl("circle", {r:5, fill:o.color, stroke:"var(--surface)", "stroke-width":2, visibility:"hidden"}, svg);
   box.appendChild(svg);
   const tip = document.createElement("div"); tip.className = "tip"; tip.hidden = true; box.appendChild(tip);
-
-  const show = (clientX) => {
+  const show = cx => {
     const rect = svg.getBoundingClientRect();
-    const px = Math.max(0, Math.min(plotW, (clientX - rect.left) * (W / rect.width)));
+    const px = Math.max(0, Math.min(plotW, (cx - rect.left) * (W / rect.width)));
     const t = t0 + px / plotW * (t1 - t0);
-    let best = 0; for (let i = 1; i < data.length; i++) if (Math.abs(data[i].t - t) < Math.abs(data[best].t - t)) best = i;
-    const p = data[best];
+    let a = 0, b = data.length - 1;
+    while (b - a > 1){ const m = (a + b) >> 1; if (data[m].t <= t) a = m; else b = m; }
+    const bi = Math.abs(data[a].t - t) <= Math.abs(data[b].t - t) ? a : b, p = data[bi];
     cross.setAttribute("x1", x(p.t)); cross.setAttribute("x2", x(p.t)); cross.setAttribute("visibility", "visible");
-    dot.setAttribute("cx", x(p.t)); dot.setAttribute("cy", y(p.total)); dot.setAttribute("visibility", "visible");
+    dot.setAttribute("cx", x(p.t)); dot.setAttribute("cy", y(p.v)); dot.setAttribute("visibility", "visible");
+    const c = o.tip(p, bi, data);
     tip.innerHTML = "";
-    const mk = (cls, txt) => { const d = document.createElement("div"); d.className = cls; d.textContent = txt; tip.appendChild(d); return d; };
-    mk("t-date", best === data.length - 1 ? "Now" : fmtDate(p.t, range, true));
-    mk("t-total", fmtUsd(p.total));
-    const r1 = mk("t-row", ""); r1.innerHTML = "<span>Hyperliquid acct</span><span></span>"; r1.lastChild.textContent = fmtCompact(p.core);
-    const r2 = mk("t-row", ""); r2.innerHTML = "<span>Staked + wallets</span><span></span>"; r2.lastChild.textContent = fmtCompact(p.wallet);
+    const add = (cls, k, v) => { const d = document.createElement("div"); d.className = cls; if (v == null) d.textContent = k; else { const s1 = document.createElement("span"), s2 = document.createElement("span"); s1.textContent = k; s2.textContent = v; d.append(s1, s2); } tip.appendChild(d); };
+    add("t-date", c.title); add("t-main", c.main);
+    for (const r of (c.rows || [])) add("t-row" + (r[2] ? " " + r[2] : ""), r[0], r[1]);
     tip.hidden = false;
     const half = tip.offsetWidth / 2, left = x(p.t) * (rect.width / W);
     tip.style.left = Math.max(half, Math.min(rect.width - half, left)) + "px";
-    tip.style.top = "-6px"; tip.style.transform = "translate(-50%, -100%)";
   };
   const hide = () => { tip.hidden = true; cross.setAttribute("visibility", "hidden"); dot.setAttribute("visibility", "hidden"); };
   svg.addEventListener("pointerdown", e => show(e.clientX));
@@ -748,35 +1288,65 @@ async function renderChart(){
   svg.addEventListener("pointerleave", hide);
   svg.addEventListener("pointercancel", hide);
 }
+function xfmtFor(key){
+  const opt = key === "1D" ? {hour:"numeric"} : key === "1W" ? {weekday:"short", day:"numeric"} : {month:"short", day:"numeric"};
+  return t => new Date(t).toLocaleString("en-US", opt);
+}
+function tipDate(t, key, isNow){
+  if (isNow) return "Now";
+  const opt = key === "All" ? {month:"short", day:"numeric", year:"numeric"} : {weekday:"short", month:"short", day:"numeric", hour:"numeric"};
+  if (key === "1D") opt.minute = "2-digit";
+  return new Date(t).toLocaleString("en-US", opt);
+}
 
-/* ---------- render: calendar ---------- */
-function level(p){ const a = Math.abs(p); return a < 0.5 ? 1 : a < 2 ? 2 : a < 5 ? 3 : 4; }
-async function renderCalendar(){
-  let days;
-  try { days = await buildDaily(); } catch { $("cal").innerHTML = ""; $("calDetail").textContent = "Couldn't load daily history."; return; }
+/* ============ rendering: value chart ============ */
+function renderRange(){
+  const r = model?.ranges[range]; if (!r) return;
+  const sum = $("rangeSummary"); sum.innerHTML = "";
+  const mk = (cls, txt) => { const s = document.createElement("span"); s.className = cls; s.textContent = txt; sum.appendChild(s); return s; };
+  mk("big " + dirT(r.pnl), fmtSigned(r.pnl) + " " + fmtPct(r.pct));
+  mk("lbl", range === "All" ? "P&L since " + new Date(r.t0).toLocaleDateString("en-US", {month:"short", day:"numeric"}) : "P&L, past " + {"1D":"24 hours", "1W":"week", "1M":"30 days"}[range]);
+  if (Math.abs(r.flows) >= Math.max(20, r.endV * 0.002)) mk("lbl", "· net " + (r.flows > 0 ? "deposits " : "withdrawals ") + fmtCompact(Math.abs(r.flows)));
+  $("chartLegend").hidden = !r.markers.length;
+  lineChart($("chartBox"), r.pts, {
+    color: r.pnl >= 0 ? "var(--up)" : "var(--down)", label:`Net worth, ${range}`, xfmt: xfmtFor(range), markers: r.markers,
+    tip: (p, i, data) => {
+      const rows = [["Hyperliquid", fmtCompact(p.core)], ["Wallets & staking", fmtCompact(p.wallet)]];
+      const prevT = i > 0 ? data[i-1].t : p.t - 1;
+      for (const m of r.markers) if (m.t > prevT && m.t <= p.t) rows.push([m.usd > 0 ? "Moved in" : "Moved out", fmtSignedCompact(m.usd), "ev"]);
+      return {title: tipDate(p.t, range, p.now), main: fmtUsd(p.v), rows};
+    },
+  });
+}
+
+/* ============ rendering: calendar ============ */
+const level = p => { const a = Math.abs(p); return a < 0.5 ? 1 : a < 2 ? 2 : a < 5 ? 3 : 4; };
+function renderCalendar(){
+  const days = model?.days; if (!days || !days.length) return;
   const cal = $("cal"); cal.innerHTML = "";
   const weeks = Math.ceil(days.length / 7);
   cal.style.setProperty("--weeks", weeks);
-  // month labels row
+  $("calRange").textContent = "Last " + weeks + " weeks";
   cal.appendChild(document.createElement("span"));
   let lastM = -1, lastW = -9;
   for (let w = 0; w < weeks; w++){
-    const d = days[w*7]; const m = new Date(d.t).getMonth();
+    const d = new Date(days[w*7].t), m = d.getMonth();
     const s = document.createElement("span"); s.className = "m";
-    if (m !== lastM && w - lastW >= 3 && w < weeks - 1){ lastW = w; s.textContent = new Date(d.t).toLocaleDateString("en-US", {month:"short"}); lastM = m; }
+    if (m !== lastM && w - lastW >= 3){ s.textContent = d.toLocaleDateString("en-US", {month:"short"}); lastM = m; lastW = w; }
     cal.appendChild(s);
   }
-  const names = ["Mon","","Wed","","Fri","","Sun"];
+  const names = ["Mon", "", "Wed", "", "Fri", "", "Sun"];
   for (let r = 0; r < 7; r++){
     const l = document.createElement("span"); l.className = "dl"; l.textContent = names[r]; cal.appendChild(l);
     for (let w = 0; w < weeks; w++){
       const d = days[w*7 + r];
       const b = document.createElement("button"); b.type = "button"; b.className = "cell";
-      if (!d){ b.className += " future"; b.tabIndex = -1; cal.appendChild(b); continue; }
+      if (!d){ b.classList.add("future"); b.tabIndex = -1; cal.appendChild(b); continue; }
       const label = new Date(d.t).toLocaleDateString("en-US", {weekday:"short", month:"short", day:"numeric"});
-      if (!d.hasData){ b.className += " none"; b.setAttribute("aria-label", label + ": no balance"); }
-      else if (!isFinite(d.pct) || Math.abs(d.pct) < 0.01){ b.className += " z"; b.setAttribute("aria-label", label + ": flat"); }
-      else { b.className += " " + (d.pct > 0 ? "u" : "d") + level(d.pct); b.setAttribute("aria-label", label + ": " + fmtSigned(d.change) + ", " + fmtPct(d.pct)); }
+      if (!d.hasData){ b.classList.add("none"); b.setAttribute("aria-label", label + ": no history"); }
+      else if (!isFinite(d.pct) || Math.abs(d.pct) < 0.01){ b.classList.add("z"); b.setAttribute("aria-label", label + ": flat"); }
+      else { b.classList.add((d.pct > 0 ? "u" : "d") + level(d.pct)); b.setAttribute("aria-label", label + ": " + fmtSigned(d.change) + ", " + fmtPct(d.pct) + (d.coarse ? " (estimated)" : "")); }
+      if (d.coarse && d.hasData) b.classList.add("est");
       if (selectedDay === d.t) b.classList.add("sel");
       b.addEventListener("click", () => {
         selectedDay = d.t;
@@ -784,172 +1354,305 @@ async function renderCalendar(){
         const det = $("calDetail"); det.innerHTML = "";
         const bb = document.createElement("b"); bb.textContent = label + (d.isToday ? " (so far)" : "");
         const s = document.createElement("span");
-        if (!d.hasData) s.textContent = " · no balance tracked";
-        else { s.className = "num " + (d.change >= 0 ? "up-t" : "down-t"); s.textContent = "  " + fmtSigned(d.change) + "  " + fmtPct(d.pct); }
+        if (!d.hasData) s.textContent = " · before your Hyperliquid history starts";
+        else { s.className = "num " + dirT(d.change); s.textContent = "  " + fmtSigned(d.change) + "  " + fmtPct(d.pct); }
         det.append(bb, s);
+        if (d.coarse && d.hasData){ const n = document.createElement("div"); n.className = "sub"; n.textContent = "Estimated. Hyperliquid keeps only a few data points per week this far back, so this move is spread across several days."; det.appendChild(n); }
       });
       cal.appendChild(b);
     }
   }
-  // stats over last 30 days
   const recent = days.slice(-30).filter(d => d.hasData && isFinite(d.pct));
   const ups = recent.filter(d => d.pct >= 0.01).length, downs = recent.filter(d => d.pct <= -0.01).length;
-  const best = recent.reduce((a, d) => !a || d.pct > a.pct ? d : a, null);
-  const worst = recent.reduce((a, d) => !a || d.pct < a.pct ? d : a, null);
+  const best = recent.reduce((a, d) => !a || d.pct > a.pct ? d : a, null), worst = recent.reduce((a, d) => !a || d.pct < a.pct ? d : a, null);
   const st = $("stats"); st.innerHTML = "";
   const stat = (k, v, cls) => { const s = document.createElement("div"); s.className = "stat"; s.innerHTML = '<span class="k"></span><span class="v"></span>'; s.firstChild.textContent = k; s.lastChild.textContent = v; if (cls) s.lastChild.classList.add(cls); st.appendChild(s); };
-  stat("Up days", recent.length ? ups + " / 30" : "—");
-  stat("Down days", recent.length ? downs + " / 30" : "—");
-  stat("Best", best ? fmtPct(best.pct) : "—", best && best.pct > 0 ? "up-t" : null);
-  stat("Worst", worst ? fmtPct(worst.pct) : "—", worst && worst.pct < 0 ? "down-t" : null);
+  stat("Up days", recent.length ? ups + " / " + recent.length : "—");
+  stat("Down days", recent.length ? downs + " / " + recent.length : "—");
+  stat("Best day", best ? fmtPct(best.pct) : "—", best && best.pct > 0 ? "up-t" : null);
+  stat("Worst day", worst ? fmtPct(worst.pct) : "—", worst && worst.pct < 0 ? "down-t" : null);
 }
 
-/* ---------- render: allocation + holdings ---------- */
+/* ============ rendering: allocation ============ */
 function renderAlloc(){
-  const by = {};
-  for (const h of snapshot.holdings) by[h.loc] = (by[h.loc] || 0) + h.value;
-  const tot = snapshot.total || 1;
-  const bar = $("allocBar"), list = $("allocList"); bar.innerHTML = ""; list.innerHTML = "";
-  for (const loc of LOC_ORDER){
-    const v = by[loc]; if (!v || v <= 0) continue;
-    const s = document.createElement("span"); s.style.background = LOCS[loc]; s.style.flex = String(v / tot); s.title = loc; bar.appendChild(s);
-    const li = document.createElement("li");
-    li.innerHTML = '<span class="sw"></span><span></span><span class="num"></span><span class="num pct"></span>';
-    li.children[0].style.background = LOCS[loc];
-    li.children[1].textContent = loc;
-    li.children[2].textContent = fmtUsd(v);
-    li.children[3].textContent = (v / tot * 100).toFixed(1) + "%";
-    list.appendChild(li);
+  const tot = snapshot.total || 1, groups = {};
+  for (const h of snapshot.holdings){
+    if (!(h.value > 0)) continue;
+    const key = allocGroup === "place" ? h.loc : (h.isMargin ? h.loc : h.sym);
+    const g = groups[key] ||= {name:key, value:0, where:new Set()};
+    g.value += h.value; g.where.add(allocGroup === "place" ? h.sym : h.loc);
   }
-  if (!list.children.length){ list.innerHTML = '<li style="display:block" class="sub">No balances found for this address yet.</li>'; }
+  let list = Object.values(groups).sort((a, b) => b.value - a.value);
+  const small = list.filter(g => g.value < SMALL); list = list.filter(g => g.value >= SMALL);
+  if (allocGroup === "asset"){
+    list.forEach((g, i) => g.color = SLOTS[i] || "var(--small)");
+    if (list.length > 6){ const other = list.slice(6); list = list.slice(0, 6); list.push({name:"Other", value:other.reduce((s, g) => s + g.value, 0), where:new Set(other.map(g => g.name)), color:"var(--small)"}); }
+  } else list.forEach(g => g.color = LOCS[g.name] || "var(--small)");
+  if (small.length) list.push({name:"Small balances", value:small.reduce((s, g) => s + g.value, 0), where:new Set(small.map(g => g.name)), color:"var(--small)", isSmall:true});
+  const bar = $("allocBar"), ul = $("allocList"); bar.innerHTML = ""; ul.innerHTML = "";
+  for (const g of list){
+    const s = document.createElement("span"); s.style.background = g.color; s.style.flex = String(Math.max(g.value / tot, 0.004)); s.title = g.name; bar.appendChild(s);
+    const li = document.createElement("li");
+    li.innerHTML = '<span class="sw"></span><span class="nm"><span></span><small></small></span><span class="num"></span><span class="num pct"></span>';
+    li.children[0].style.background = g.color;
+    li.children[1].children[0].textContent = g.name;
+    li.children[1].children[1].textContent = g.isSmall ? g.where.size + " under $20: " + [...g.where].join(", ") : [...g.where].join(" · ");
+    li.children[2].textContent = fmtUsd(g.value);
+    const pct = g.value / tot * 100;
+    li.children[3].textContent = pct < 0.1 ? "<0.1%" : pct.toFixed(1) + "%";
+    ul.appendChild(li);
+  }
+  if (!list.length) ul.innerHTML = '<li style="display:block" class="sub">No balances found for this address yet.</li>';
+  document.querySelectorAll("#allocSeg button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.g === allocGroup)));
+}
+
+/* ============ rendering: holdings ============ */
+function sparkline(host, pts){
+  host.innerHTML = "";
+  if (pts.length < 2) return;
+  const W = 48, H = 26, vs = pts.map(p => p[1]), lo = Math.min(...vs), hi = Math.max(...vs), t0 = pts[0][0], t1 = pts[pts.length-1][0];
+  const x = t => (t - t0) / Math.max(1, t1 - t0) * W, y = v => 2 + (1 - (v - lo) / Math.max(1e-12, hi - lo)) * (H - 4);
+  const svg = svgEl("svg", {viewBox:`0 0 ${W} ${H}`, "aria-hidden":"true", preserveAspectRatio:"none"});
+  svgEl("path", {d: pts.map((p, i) => (i ? "L" : "M") + x(p[0]).toFixed(1) + " " + y(p[1]).toFixed(1)).join(" "), fill:"none", stroke: vs[vs.length-1] >= vs[0] ? "var(--up)" : "var(--down)", "stroke-width":1.5, "stroke-linejoin":"round", "vector-effect":"non-scaling-stroke"}, svg);
+  host.appendChild(svg);
+}
+function pricePts(h, from){
+  const pts = seriesPts(h.coin, from);
+  if (pts.length && h.px > 0) pts.push([Date.now(), h.px]);
+  return pts;
+}
+function badgeText(sym){ const s = sym.replace(/[^A-Za-z0-9]/g, ""); return (s.length <= 3 ? s : s.slice(0, 2)).toUpperCase(); }
+function renderHoldSummary(){
+  const sum = $("holdSummary"); sum.innerHTML = "";
+  document.querySelectorAll("#holdSeg button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.m === holdMode)));
+  const mk = (cls, txt) => { const x = document.createElement("span"); x.className = cls; x.textContent = txt; sum.appendChild(x); };
+  if (holdMode === "24h"){
+    const d = snapshot.total - snapshot.prevTotal, base = snapshot.prevTotal || 1;
+    mk("big " + dirT(d), fmtSigned(d) + " " + fmtPct(d / base * 100)); mk("lbl", "price change on what you hold, past 24h · lines show 7 days"); return;
+  }
+  let cost = 0, value = 0, n = 0;
+  for (const h of snapshot.holdings){ const cf = costFields(h); if (cf){ cost += cf.cost; value += h.value; n++; } }
+  const pos = snapshot.positions.reduce((s, p) => s + p.upnl, 0);
+  if (!n && !snapshot.positions.length){ mk("lbl", "Entry prices appear once your history has loaded."); return; }
+  const up = value - cost + pos;
+  mk("big " + dirT(up), fmtSigned(up) + (cost > 0 ? " " + fmtPct((value - cost) / cost * 100) : ""));
+  mk("lbl", "unrealized, vs. your average entry" + (cost > 0 ? " on " + fmtCompact(cost) + " cost" : "") + (snapshot.positions.length ? " + perps" : ""));
 }
 function renderHoldings(){
+  renderHoldSummary();
   const box = $("holdings"); box.innerHTML = "";
   const all = snapshot.holdings.slice().sort((a, b) => b.value - a.value);
-  const big = all.filter(h => h.value >= 1 || h.isMargin), dust = all.filter(h => !(h.value >= 1 || h.isMargin));
-  const shown = showDust ? all : big;
-  $("holdCount").textContent = all.length + (all.length === 1 ? " balance" : " balances");
-  for (const h of shown){
-    const row = document.createElement("div"); row.className = "row";
-    const sym = document.createElement("div"); sym.className = "sym";
-    const nm = document.createElement("span"); nm.textContent = h.sym; nm.style.overflow = "hidden"; nm.style.textOverflow = "ellipsis"; nm.style.whiteSpace = "nowrap";
-    const loc = document.createElement("span"); loc.className = "loc"; const i = document.createElement("i"); i.style.background = LOCS[h.loc]; loc.append(i, h.loc);
-    sym.append(nm, loc);
-    const val = document.createElement("div"); val.className = "val"; val.textContent = h.unpriced ? "no price" : fmtUsd(h.value);
-    const amt = document.createElement("div"); amt.className = "amt";
-    amt.textContent = h.isMargin ? (h.loc === "Perps margin" ? "Account value incl. unrealized PnL" : "Vault equity") : fmtAmt(h.amt) + " " + h.sym + " @ " + (h.px >= 1 ? usd2.format(h.px) : "$" + h.px.toPrecision(4));
-    const d = h.value - h.prevValue, p = h.prevValue > 0 ? d / h.prevValue * 100 : 0;
-    const chg = document.createElement("div"); chg.className = "chg " + (d > 0.005 ? "up-t" : d < -0.005 ? "down-t" : "");
-    chg.textContent = Math.abs(d) < 0.005 ? "—" : fmtSigned(d) + " " + fmtPct(p);
-    row.append(sym, val, amt, chg);
-    box.appendChild(row);
+  const big = all.filter(h => h.value >= SMALL), small = all.filter(h => h.value < SMALL);
+  for (const h of big) box.appendChild(holdingRow(h));
+  if (small.length){
+    const row = document.createElement("div"); row.className = "hrow small-row";
+    const btn = document.createElement("button"); btn.type = "button"; btn.className = "hbtn"; btn.setAttribute("aria-expanded", String(showSmall));
+    btn.style.gridTemplateColumns = "34px 1fr auto";
+    const badge = document.createElement("span"); badge.className = "badge"; badge.textContent = small.length;
+    const main = document.createElement("span"); main.className = "hmain";
+    const s1 = document.createElement("span"); s1.className = "hsym"; s1.textContent = "Small balances";
+    const s2 = document.createElement("span"); s2.className = "hamt"; s2.textContent = (showSmall ? "Hide " : "Show ") + small.length + " under $20" + (snapshot.hidden ? " · " + snapshot.hidden + " unpriced hidden" : "");
+    main.append(s1, s2);
+    const val = document.createElement("span"); val.className = "hval"; const v = document.createElement("span"); v.className = "v"; v.textContent = fmtUsd(small.reduce((s, h) => s + h.value, 0)); val.appendChild(v);
+    btn.append(badge, main, val);
+    btn.addEventListener("click", () => { showSmall = !showSmall; renderHoldings(); });
+    row.appendChild(btn); box.appendChild(row);
+    if (showSmall){
+      const wrap = document.createElement("div"); wrap.className = "small-list";
+      for (const h of small) wrap.appendChild(holdingRow(h, true));
+      box.appendChild(wrap);
+    }
   }
-  if (!shown.length) box.innerHTML = '<div class="sub">Nothing here yet. If you just moved funds, tap refresh in a minute.</div>';
-  const btn = $("dustBtn");
-  btn.hidden = !dust.length;
-  btn.textContent = showDust ? "Hide balances under $1" : "Show " + dust.length + " balance" + (dust.length === 1 ? "" : "s") + " under $1";
-
+  if (!all.length) box.innerHTML = '<div class="sub">Nothing here yet. If you just moved funds, tap refresh in a minute.</div>';
+  renderPositions();
+}
+function holdingRow(h, compact){
+  const row = document.createElement("div"); row.className = "hrow";
+  const btn = document.createElement(compact ? "div" : "button"); if (!compact) btn.type = "button"; btn.className = "hbtn";
+  const badge = document.createElement("span"); badge.className = "badge"; badge.textContent = badgeText(h.isMargin ? "USD" : h.sym);
+  const dot = document.createElement("i"); dot.style.background = LOCS[h.loc]; badge.appendChild(dot);
+  const main = document.createElement("span"); main.className = "hmain";
+  const sym = document.createElement("span"); sym.className = "hsym";
+  const nm = document.createElement("span"); nm.textContent = h.sym;
+  const loc = document.createElement("span"); loc.className = "loc"; loc.textContent = LOC_SHORT[h.loc] || h.loc; loc.title = h.loc;
+  sym.append(nm, loc);
+  const cf = costFields(h);
+  const amt = document.createElement("span"); amt.className = "hamt";
+  const pnlMode = holdMode === "pnl";
+  amt.textContent = h.isMargin ? (h.loc === "Perps margin" ? "Incl. unrealized PnL" : "Vault equity") : fmtAmt(h.amt) + (pnlMode && cf ? " · avg " + fmtPrice(cf.avg) : " " + h.sym);
+  main.append(sym, amt);
+  const val = document.createElement("span"); val.className = "hval";
+  const v = document.createElement("span"); v.className = "v"; v.textContent = h.unpriced ? "no price" : fmtUsd(h.value);
+  const p = h.prev > 0 ? (h.px - h.prev) / h.prev * 100 : 0;
+  const c = document.createElement("span");
+  if (holdMode === "pnl" && !h.stable && !h.isMargin){
+    c.className = "c " + (cf ? dirT(cf.upnl) : "flat-t");
+    c.textContent = cf ? fmtSignedCompact(cf.upnl) + " " + fmtPctShort(cf.pct) : "no entry";
+    if (!cf) c.title = "Entry price not known for this balance";
+  } else { c.className = "c " + (h.stable || h.isMargin ? "flat-t" : dirT(p)); c.textContent = h.stable || h.isMargin ? "—" : fmtPct(p); }
+  val.append(v, c);
+  if (compact){ btn.append(badge, main, val); row.appendChild(btn); return row; }
+  if (pnlMode){ btn.classList.add("nospark"); btn.append(badge, main, val); }
+  else {
+    const spark = document.createElement("span"); spark.className = "spark";
+    if (h.coin) sparkline(spark, pricePts(h, Date.now() - 7*DAY));
+    btn.append(badge, main, spark, val);
+  }
+  const detail = document.createElement("div"); detail.className = "hdetail"; detail.hidden = openRow !== h.id;
+  btn.setAttribute("aria-expanded", String(openRow === h.id));
+  btn.addEventListener("click", () => { openRow = openRow === h.id ? null : h.id; renderHoldings(); });
+  row.append(btn, detail);
+  if (openRow === h.id) renderDetail(detail, h);
+  return row;
+}
+function renderDetail(box, h){
+  box.innerHTML = "";
+  if (!h.coin){
+    const n = document.createElement("div"); n.className = "sub";
+    n.textContent = h.isMargin ? "USDC held as margin. Its value moves with your open positions." : "Stablecoin, worth about $1.";
+    box.appendChild(n); return;
+  }
+  const key = detailRange[h.id] || "1W";
+  const seg = document.createElement("div"); seg.className = "seg"; seg.setAttribute("role", "group"); seg.setAttribute("aria-label", "Price range");
+  for (const k of ["1D", "1W", "1M"]){
+    const b = document.createElement("button"); b.type = "button"; b.textContent = k; b.setAttribute("aria-pressed", String(k === key));
+    b.addEventListener("click", ev => { ev.stopPropagation(); detailRange[h.id] = k; renderDetail(box, h); });
+    seg.appendChild(b);
+  }
+  const head = document.createElement("div"); head.className = "card-h";
+  const title = document.createElement("span"); title.className = "sub"; title.textContent = h.sym + " price";
+  head.append(title, seg);
+  const chart = document.createElement("div"); chart.className = "chart-box small";
+  chart.innerHTML = '<div class="skel" style="position:absolute;inset:0"></div>';
+  const stats = document.createElement("div"); stats.className = "dstats";
+  const stats2 = document.createElement("div"); stats2.className = "dstats";
+  box.append(head, chart, stats, stats2);
+  const cf = costFields(h);
+  const span = {"1D":DAY, "1W":7*DAY, "1M":30*DAY}[key];
+  const res = {"1D":["15m"], "1W":["1h"], "1M":["4h"]}[key];
+  ensureSeries([h.coin], Date.now() - span, res.concat(["4h"])).then(() => {
+    const pts = pricePts(h, Date.now() - span).map(([t, v]) => ({t, v}));
+    if (pts.length < 2) chart.innerHTML = '<div class="sub">No price history for this token yet.</div>';
+    else lineChart(chart, pts, {color: pts[pts.length-1].v >= pts[0].v ? "var(--up)" : "var(--down)", label: h.sym + " price", xfmt: xfmtFor(key), yfmt: fmtPriceAxis,
+      ref: cf ? {v: cf.avg, label: "Avg entry " + fmtPrice(cf.avg)} : null,
+      tip: p => ({title: tipDate(p.t, key, p.t >= Date.now() - MIN), main: fmtPrice(p.v), rows: [[fmtAmt(h.amt) + " " + h.sym, fmtCompact(h.amt * p.v)]].concat(cf ? [["vs. entry", fmtSignedCompact(h.amt * (p.v - cf.avg))]] : [])})});
+    const chg = back => { const p0 = priceAt(h.coin, Date.now() - back); return p0 ? (h.px - p0) / p0 * 100 : NaN; };
+    stats.innerHTML = "";
+    const stat = (k, v, cls) => { const s = document.createElement("div"); s.className = "stat"; s.innerHTML = '<span class="k"></span><span class="v"></span>'; s.firstChild.textContent = k; s.lastChild.textContent = v; if (cls) s.lastChild.classList.add(cls); stats.appendChild(s); };
+    const d1 = h.prev > 0 ? (h.px - h.prev) / h.prev * 100 : NaN, d7 = chg(7*DAY), d30 = chg(30*DAY);
+    stat("Price", fmtPrice(h.px)); stat("24h", fmtPct(d1), dirT(d1)); stat("7d", fmtPct(d7), dirT(d7)); stat("30d", fmtPct(d30), dirT(d30));
+    stats2.innerHTML = "";
+    const stat2 = (k, v, cls) => { const s = document.createElement("div"); s.className = "stat"; s.innerHTML = '<span class="k"></span><span class="v"></span>'; s.firstChild.textContent = k; s.lastChild.textContent = v; if (cls) s.lastChild.classList.add(cls); stats2.appendChild(s); };
+    if (cf){ stat2("Avg entry", fmtPrice(cf.avg)); stat2("Cost", fmtCompact(cf.cost)); stat2("Profit", fmtSignedCompact(cf.upnl), dirT(cf.upnl)); stat2("Return", fmtPct(cf.pct), dirT(cf.pct)); }
+    else { const n = document.createElement("div"); n.className = "sub"; n.style.gridColumn = "1 / -1"; n.textContent = "Entry price isn't known for this balance yet."; stats2.appendChild(n); }
+  }).catch(() => { chart.innerHTML = '<div class="sub">Couldn\'t load price history. Try again in a minute.</div>'; });
+}
+function renderPositions(){
   const pos = snapshot.positions; $("posCard").hidden = !pos.length;
   const pb = $("positions"); pb.innerHTML = "";
   for (const p of pos){
-    const row = document.createElement("div"); row.className = "row";
-    const sym = document.createElement("div"); sym.className = "sym";
-    const nm = document.createElement("span"); nm.textContent = p.coin + (p.lev ? " " + p.lev + "x" : "");
-    const side = document.createElement("span"); side.className = "loc"; side.textContent = p.szi > 0 ? "Long" : "Short";
-    side.style.color = p.szi > 0 ? "var(--up)" : "var(--down)";
+    const row = document.createElement("div"); row.className = "hrow";
+    const inner = document.createElement("div"); inner.className = "hbtn"; inner.style.cursor = "default"; inner.style.gridTemplateColumns = "34px 1fr auto";
+    const [dexName, mkt] = p.coin.includes(":") ? p.coin.split(":") : [null, p.coin];
+    const badge = document.createElement("span"); badge.className = "badge"; badge.textContent = badgeText(mkt);
+    const main = document.createElement("span"); main.className = "hmain";
+    const sym = document.createElement("span"); sym.className = "hsym";
+    const nm = document.createElement("span"); nm.textContent = mkt + (p.lev ? " " + p.lev + "x" : "") + (dexName ? " · " + dexName : "");
+    const side = document.createElement("span"); side.className = "loc"; side.textContent = p.szi > 0 ? "Long" : "Short"; side.style.color = p.szi > 0 ? "var(--up)" : "var(--down)";
     sym.append(nm, side);
-    const val = document.createElement("div"); val.className = "val " + (p.upnl >= 0 ? "up-t" : "down-t"); val.textContent = fmtSigned(p.upnl);
-    const amt = document.createElement("div"); amt.className = "amt"; amt.textContent = fmtAmt(Math.abs(p.szi)) + " @ " + usd2.format(p.entry) + " · size " + fmtCompact(p.value);
-    const chg = document.createElement("div"); chg.className = "chg sub"; chg.textContent = "unrealized";
-    row.append(sym, val, amt, chg); pb.appendChild(row);
+    const amt = document.createElement("span"); amt.className = "hamt"; amt.textContent = fmtAmt(Math.abs(p.szi)) + " · entry " + fmtPrice(p.entry) + " · now " + fmtPrice(p.mark) + (p.liq > 0 ? " · liq " + fmtPrice(p.liq) : "");
+    main.append(sym, amt);
+    const val = document.createElement("span"); val.className = "hval";
+    const v = document.createElement("span"); v.className = "v " + dirT(p.upnl); v.textContent = fmtSigned(p.upnl);
+    const c = document.createElement("span"); c.className = "c " + dirT(p.upnl); c.textContent = isFinite(p.roe) ? fmtPctShort(p.roe) + " ROE" : "unrealized";
+    val.append(v, c);
+    inner.append(badge, main, val); row.appendChild(inner); pb.appendChild(row);
   }
 }
 function renderBanners(){
   const b = $("banners"); b.innerHTML = "";
-  for (const e of snapshot.errors){ const d = document.createElement("div"); d.className = "banner"; d.textContent = e; b.appendChild(d); }
+  for (const e of [...(snapshot?.errors || []), ...(hist?.notes || [])]){ const d = document.createElement("div"); d.className = "banner"; d.textContent = e; b.appendChild(d); }
 }
 
-/* ---------- load cycle ---------- */
+/* ============ load cycle ============ */
 async function load(full){
   if (loading || !ADDR) return;
   loading = true; $("refreshBtn").classList.add("spin");
   try {
     market = await loadMarket();
-    snapshot = await loadAccount();
+    snapshot = await loadAccount(full);
     lastLoad = Date.now();
-    if (full) { candleCache.clear(); }
-    seriesCache = new Map();
-    renderBanners(); renderHero(); renderAlloc(); renderHoldings(); renderUpdated();
-    await Promise.all([renderChart(), renderCalendar()]);
+    if (hist && hist.addr === ADDR) computeCosts();
+    renderBanners(); renderTotal(); renderAlloc(); renderHoldings(); renderUpdated();
+    if (!model) renderPnlStrip();
+    if (full || !hist || hist.addr !== ADDR || Date.now() - hist.at > 10*MIN){
+      if (full) SER.clear();
+      await loadHistory();
+      renderBanners();
+    }
+    await ensureAllSeries();
+    buildModel();
+    renderPnlStrip(); renderRange(); renderCalendar(); renderHoldings();
   } catch (e){
     const b = $("banners"); b.innerHTML = "";
     const d = document.createElement("div"); d.className = "banner err";
-    d.textContent = "Couldn't reach Hyperliquid (" + (e && e.message ? e.message : "network error") + "). Check your connection and tap refresh.";
+    d.textContent = "Couldn't load your data (" + (e && e.message ? e.message : "network error") + "). Check your connection and tap refresh.";
     b.appendChild(d);
+    if (window.console) console.error(e);
     $("updated").textContent = lastLoad ? "Showing data from " + new Date(lastLoad).toLocaleTimeString() : "Not loaded";
   } finally {
     loading = false; $("refreshBtn").classList.remove("spin");
   }
 }
 
-/* ---------- views ---------- */
+/* ============ views + events ============ */
 function showSetup(canCancel){
-  $("setup").hidden = false; $("dash").hidden = true;
-  $("addrChip").hidden = true; $("refreshBtn").hidden = true;
-  $("cancelSetup").hidden = !canCancel;
-  $("addrInput").value = ADDR || "";
+  $("setup").hidden = false; $("dash").hidden = true; $("addrChip").hidden = true; $("refreshBtn").hidden = true;
+  $("cancelSetup").hidden = !canCancel; $("addrInput").value = ADDR || "";
 }
 function showDash(){
-  $("setup").hidden = true; $("dash").hidden = false;
-  $("addrChip").hidden = false; $("refreshBtn").hidden = false;
-  $("addrChip").textContent = shortAddr(ADDR);
-  $("addrChip").setAttribute("aria-label", "Change address, current " + ADDR);
+  $("setup").hidden = true; $("dash").hidden = false; $("addrChip").hidden = false; $("refreshBtn").hidden = false;
+  $("addrChip").textContent = shortAddr(ADDR); $("addrChip").setAttribute("aria-label", "Change address, current " + ADDR);
 }
 function setAddr(a){
-  ADDR = a.toLowerCase();
-  store.set("addr", ADDR);
+  ADDR = a.toLowerCase(); store.set("addr", ADDR);
   try { history.replaceState(null, "", "#" + ADDR); } catch {}
-  snapshot = null; lastLoad = 0; candleCache.clear(); seriesCache = new Map(); selectedDay = null;
+  snapshot = null; hist = null; model = null; lastLoad = 0; SER.clear(); selectedDay = null; openRow = null;
   showDash(); load(true);
 }
-
 $("setupForm").addEventListener("submit", e => {
   e.preventDefault();
   const v = $("addrInput").value.trim();
-  if (!/^0x[0-9a-fA-F]{40}$/.test(v)){
-    $("addrHint").textContent = "That doesn't look like a wallet address. It should start with 0x and be 42 characters long.";
-    $("addrHint").classList.add("err"); return;
-  }
+  if (!/^0x[0-9a-fA-F]{40}$/.test(v)){ $("addrHint").textContent = "That doesn't look like a wallet address. It should start with 0x and be 42 characters long."; $("addrHint").classList.add("err"); return; }
   $("addrHint").classList.remove("err"); $("addrHint").textContent = "Starts with 0x and has 42 characters.";
   setAddr(v);
 });
 $("cancelSetup").addEventListener("click", showDash);
 $("addrChip").addEventListener("click", () => showSetup(true));
 $("refreshBtn").addEventListener("click", () => load(true));
-$("dustBtn").addEventListener("click", () => { showDust = !showDust; renderHoldings(); });
-document.querySelectorAll(".seg button").forEach(b => {
+document.querySelectorAll("#rangeSeg button").forEach(b => {
   b.setAttribute("aria-pressed", String(b.dataset.range === range));
   b.addEventListener("click", () => {
-    range = b.dataset.range; store.set("range", range);
-    document.querySelectorAll(".seg button").forEach(x => x.setAttribute("aria-pressed", String(x === b)));
-    if (snapshot){ $("chartBox").innerHTML = '<div class="skel" style="position:absolute;inset:0"></div>'; renderChart(); }
+    range = b.dataset.range; store.set("range2", range);
+    document.querySelectorAll("#rangeSeg button").forEach(x => x.setAttribute("aria-pressed", String(x === b)));
+    renderRange();
   });
 });
+document.querySelectorAll("#holdSeg button").forEach(b => b.addEventListener("click", () => { holdMode = b.dataset.m; store.set("hold", holdMode); if (snapshot) renderHoldings(); }));
+document.querySelectorAll("#allocSeg button").forEach(b => b.addEventListener("click", () => { allocGroup = b.dataset.g; store.set("alloc", allocGroup); if (snapshot) renderAlloc(); }));
 let rw = 0;
-window.addEventListener("resize", () => { clearTimeout(rw); rw = setTimeout(() => { if (snapshot) renderChart(); }, 150); });
+window.addEventListener("resize", () => { clearTimeout(rw); rw = setTimeout(() => { if (model) renderRange(); }, 150); });
 setInterval(() => { renderUpdated(); if (document.visibilityState === "visible" && ADDR && Date.now() - lastLoad > 60e3) load(false); }, 10e3);
 document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible" && ADDR && Date.now() - lastLoad > 30e3) load(false); });
 
-/* home-screen icon, drawn once */
 try {
   const c = document.createElement("canvas"); c.width = c.height = 180; const x = c.getContext("2d");
-  x.fillStyle = "#0b0e14"; x.fillRect(0, 0, 180, 180);
-  x.strokeStyle = "#3ecf8e"; x.lineWidth = 12; x.lineJoin = "round"; x.lineCap = "round";
+  x.fillStyle = "#090c11"; x.fillRect(0, 0, 180, 180);
+  x.strokeStyle = "#3ccf8e"; x.lineWidth = 12; x.lineJoin = "round"; x.lineCap = "round";
   x.beginPath(); x.moveTo(30, 110); x.lineTo(62, 110); x.lineTo(80, 60); x.lineTo(102, 130); x.lineTo(120, 90); x.lineTo(150, 90); x.stroke();
   const l = document.createElement("link"); l.rel = "apple-touch-icon"; l.href = c.toDataURL("image/png"); document.head.appendChild(l);
 } catch {}
 
-/* boot */
 const fromHash = (location.hash || "").slice(1);
 const saved = /^0x[0-9a-fA-F]{40}$/.test(fromHash) ? fromHash : store.get("addr");
 if (saved && /^0x[0-9a-fA-F]{40}$/.test(saved)) setAddr(saved); else showSetup(false);
