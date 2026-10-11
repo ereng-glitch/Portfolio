@@ -446,6 +446,8 @@ function setManualEntry(h, price){
 // Coins you've hidden (scam airdrops etc). Saved on this device, left out of every total.
 const hideKey = h => (h.loc + "|" + ((h.evm && h.evm.address) || h.addr || h.sym)).toLowerCase();
 let hiddenKeys = new Set(store.json("hiddenCoins") || []);
+const idKey = id => "id:" + String(id).toLowerCase();
+const isHiddenId = id => hiddenKeys.has(idKey(id));
 const saveHidden = () => store.setJson("hiddenCoins", [...hiddenKeys]);
 function sumSnapshot(snap){
   snap.total = snap.holdings.reduce((s, h) => s + h.value, 0);
@@ -453,8 +455,8 @@ function sumSnapshot(snap){
   snap.coreNow = snap.holdings.filter(h => CORE_LOCS.has(h.loc)).reduce((s, h) => s + h.value, 0);
 }
 function setHidden(h, hide){
-  const k = hideKey(h);
-  if (hide) hiddenKeys.add(k); else hiddenKeys.delete(k);
+  const k = hideKey(h), ik = idKey(h.id);
+  if (hide){ hiddenKeys.add(k); hiddenKeys.add(ik); } else { hiddenKeys.delete(k); hiddenKeys.delete(ik); }
   saveHidden();
   if (!snapshot) return;
   const from = hide ? snapshot.holdings : snapshot.hiddenHoldings, to = hide ? snapshot.hiddenHoldings : snapshot.holdings;
@@ -678,8 +680,10 @@ async function loadAccount(full){
       add({sym:tk.sym, loc:"Ethereum", amt, px:pr.p.px, prev:pr.p.prev, stable:pr.stable, coin:pr.coin});
     });
   }
-  const hiddenHoldings = holdings.filter(h => hiddenKeys.has(hideKey(h)));
-  const shown = holdings.filter(h => !hiddenKeys.has(hideKey(h)));
+  const hiddenHoldings = holdings.filter(h => hiddenKeys.has(hideKey(h)) || isHiddenId(h.id));
+  let addedIds = false; for (const h of hiddenHoldings) if (!isHiddenId(h.id)){ hiddenKeys.add(idKey(h.id)); addedIds = true; }
+  if (addedIds) saveHidden();
+  const shown = holdings.filter(h => !hiddenHoldings.includes(h));
   const pmap = {}; if (Array.isArray(portfolio)) for (const [k, v] of portfolio) pmap[k] = v;
   const snap = {holdings:shown, hiddenHoldings, positions, portfolio:pmap, errors, ethOk:!!ethRes, evmOk:!!evmRes, at:Date.now(), hidden, ethFound:ethFound.filter(f => !hiddenKeys.has(("Ethereum|" + f.addr).toLowerCase()))};
   sumSnapshot(snap);
@@ -881,7 +885,7 @@ async function ethHistory(fns, extras, out){
   const past = {};
   for (const it of items){
     const ad = (it.token?.address_hash || it.token?.address || "").toLowerCase();
-    if (!ad || byAddr[ad] || it.token?.reputation === "scam") continue;
+    if (!ad || byAddr[ad] || it.token?.reputation === "scam" || hiddenKeys.has("ethereum|" + ad)) continue;
     past[ad] = {sym:it.token?.symbol || "?", dec:+(it.total?.decimals ?? it.token?.decimals ?? 18)};
   }
   const pastAddrs = Object.keys(past).slice(0, 30);
@@ -1029,7 +1033,7 @@ function walletItems(){
   const items = snapshot.holdings.filter(h => !CORE_LOCS.has(h.loc) && !h.unpriced && (h.coin || h.stable || h.px > 0))
     .map(h => ({id:h.id, sym:h.sym, loc:h.loc, amt:h.amt, px:h.px, coin:h.coin, stable:!!h.stable, balFn: hist?.fns[h.id] || null}));
   for (const x of (hist?.extras || [])) if (!items.some(i => i.id === x.id)) items.push(x);
-  return items;
+  return items.filter(i => !isHiddenId(i.id));
 }
 
 /* ============ history loading ============ */
@@ -1061,6 +1065,7 @@ async function ensureAllSeries(){
   const dataStart = H.T.length ? H.T[0] : Date.now() - 120*DAY;
   const earliest = Math.min(calStartFor(dataStart).getTime(), dataStart);
   const coins = items.filter(i => !i.stable && i.coin).map(i => i.coin);
+  for (const h of (snapshot.hiddenHoldings || [])) if (h.loc === "Core spot" && h.coin && !coins.includes(h.coin)) coins.push(h.coin);
   const visible = snapshot.holdings.filter(h => h.coin && h.value >= SMALL).map(h => h.coin).filter(c => !coins.includes(c));
   const moves = hist?.out?.ethMoves || [];
   const costCoins = [...new Set(moves.map(m => ethSymPricing(m.sym)).filter(p => p && !p.stable).map(p => p.coin))];
@@ -1168,8 +1173,17 @@ function buildModel(){
     }
     return s;
   };
-  model.totalAt = t => t >= now - MIN ? snapshot.total : coreAt(t) + model.walletAt(t);
-  model.pnl = (t0, t1, step) => (corePnlAt(t1) - corePnlAt(t0)) + model.walletMove(t0, t1, step);
+  // Hidden HyperCore spot coins are inside Hyperliquid's account totals, so take them out
+  // (today's amount times the price at each moment, since Hyperliquid has no per-coin balance history)
+  const hiddenCore = (snapshot.hiddenHoldings || []).filter(h => h.loc === "Core spot" && h.amt > 0 && (h.stable || h.coin));
+  const hcVal = t => { let s = 0; for (const h of hiddenCore) s += h.stable ? h.amt : h.amt * (px(h, t) || 0); return s; };
+  model.coreAt = t => Math.max(0, coreAt(t) - hcVal(t));
+  model.totalAt = t => t >= now - MIN ? snapshot.total : model.coreAt(t) + model.walletAt(t);
+  model.pnl = (t0, t1, step) => {
+    let hc = 0;
+    if (hiddenCore.length) for (let a = t0; a < t1; a += step){ const b = Math.min(t1, a + step); for (const h of hiddenCore) if (!h.stable) hc += h.amt * ((px(h, b) || 0) - (px(h, a) || 0)); }
+    return (corePnlAt(t1) - corePnlAt(t0)) - hc + model.walletMove(t0, t1, step);
+  };
   model.ranges = {}; for (const k of Object.keys(RANGES)) model.ranges[k] = buildRange(k);
   model.days = buildDays();
   computeCosts();
@@ -1191,7 +1205,7 @@ function buildRange(key){
   const step = cfg.step || (span <= 14*DAY ? HOUR : span <= 120*DAY ? 4*HOUR : DAY);
   start = Math.ceil(start / step) * step;
   const pts = [];
-  for (let t = start; t < now - step/4; t += step){ const core = coreAt(t), wallet = model.walletAt(t); pts.push({t, core, wallet, v:core + wallet}); }
+  for (let t = start; t < now - step/4; t += step){ const core = model.coreAt(t), wallet = model.walletAt(t); pts.push({t, core, wallet, v:core + wallet}); }
   pts.push({t:now, core:snapshot.coreNow, wallet:snapshot.total - snapshot.coreNow, v:snapshot.total, now:true});
   const t0 = pts[0].t, startV = pts[0].v, endV = snapshot.total;
   const pnl = model.pnl(t0, now, Math.min(step, 4*HOUR));
