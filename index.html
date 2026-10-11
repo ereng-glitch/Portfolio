@@ -281,6 +281,7 @@ details.notes p{margin:10px 0 0; line-height:1.55; max-width:65ch}
       <p><b>Value</b> uses Hyperliquid's account history for HyperCore, merged down to its finest detail. Transfers are placed at the exact minute from your transfer log, so money in transit isn't counted twice. Staked HYPE, HyperEVM and Ethereum balances are rebuilt from your transaction history and priced at each moment.</p>
       <p><b>Average entry</b> for HyperCore spot is Hyperliquid's own cost basis. Tokens moved in from elsewhere count at the price when they arrived. Ethereum tokens use what you paid in the same transaction, or the market price when they arrived. HyperEVM tokens use what you paid in the same transaction, like Ethereum. Staked HYPE uses the price when the balance went up. Sales lower the cost in proportion, so the average entry stays the same.</p>
       <p><b>Small balances</b> under $20 are grouped at the bottom of Holdings and Where it sits.</p>
+      <p><b>Realized profit</b> comes from your HyperCore spot trade history (Hyperliquid keeps your last 10,000 trades). Each sale counts the sale price minus your average buy price, after fees. Coins you hold show their total profit (realized plus unrealized), and coins you've fully sold are listed under Sold coins. Coins that arrived by transfer rather than a trade have no known cost, so selling them adds no realized profit. Perp trading profit is already in your P&amp;L above.</p>
       <p><b>Setting your own entry price</b>: open a holding and tap Set entry price. Your price replaces the calculated average entry for that coin's profit and loss, and is marked SET. Tap Use automatic to go back. This is saved on this device only.</p>
       <p><b>Hiding a coin</b>: open any holding and tap Hide, or tap × on a small balance. Hidden coins are left out of your net worth, P&amp;L and charts, and are listed under Hidden coins at the bottom of Holdings, where you can bring them back. This is saved on this device only.</p>
       <p>Data: Hyperliquid public API, HyperEVM and Ethereum public nodes, Blockscout for Ethereum history, CoinGecko for RAIL. Any ERC-20 token on Ethereum is found automatically. Listed coins are priced by CoinGecko, and DEX-only coins by GeckoTerminal when they have at least $20k of liquidity. Airdropped spam without real liquidity is hidden. On HyperEVM, every token that trades on HyperCore is checked, plus WHYPE, kHYPE and any other token Blockscout (hyperscan.com) finds in your wallet. Past HyperEVM balances come from your Blockscout transfer history, so buys and sells show at the exact time, including coins you've since sold. If a token's transfers don't add up to today's balance, its past is read from the chain once a day instead.</p>
@@ -432,7 +433,7 @@ let range = store.get("range2") || "1W"; if (!RANGES[range]) range = "1W";
 let allocGroup = store.get("alloc") || "asset";
 let lastLoad = 0, loading = false, selectedDay = null, openRow = null, showSmall = false;
 let holdMode = store.get("hold") || "pnl";
-let showHidden = false;
+let showHidden = false, showClosed = false;
 let editEntry = null, entryDraft = null; // holding whose entry price is being edited, and what's typed so far
 // Average entry prices you set by hand: {"<address>|<loc>|<token>": price}. Saved on this device.
 let entryOverrides = store.json("entryOverrides") || {};
@@ -483,8 +484,9 @@ async function loadMarket(){
     if (px > 0) perpPx[u.name] = {px, prev: prev > 0 ? prev : px};
   });
   const ctxByCoin = {}; for (const c of spotCtxs) if (c && c.coin) ctxByCoin[c.coin] = c;
-  const tokens = {}, byName = {};
+  const tokens = {}, byName = {}, pairs = {};
   for (const t of spotMeta.tokens){ tokens[t.index] = t; if (!byName[t.name] || t.evmContract) byName[t.name] = t; }
+  for (const u of spotMeta.universe) pairs[u.name] = u.tokens;
   const tokenPx = {0:{px:1, prev:1, coin:null, vol:Infinity, stable:true, pass:0}};
   const setPx = pass => {
     for (const u of spotMeta.universe){
@@ -506,7 +508,7 @@ async function loadMarket(){
   for (const t of spotMeta.tokens) if (/^(USDC|USDT0|USDH|USDE|USDHL|FEUSD)$/i.test(t.name) && tokenPx[t.index]) tokenPx[t.index].stable = true;
 
   const cgPx = Object.assign({}, store.json("cgLast") || {});
-  return {tokens, byName, tokenPx, perpPx, cgPx, hypeIdx};
+  return {tokens, byName, pairs, tokenPx, perpPx, cgPx, hypeIdx};
 }
 /* ---- any-token pricing: GeckoTerminal finds the token (and its CoinGecko id if listed), CoinGecko prices listed ones ---- */
 const tokInfo = store.json("tokInfo") || {};
@@ -620,7 +622,7 @@ async function loadAccount(full){
     const amt = +b.total; if (!amt) continue;
     const p = market.tokenPx[b.token];
     const entry = +b.entryNtl || 0;
-    add({sym:b.coin, loc:"Core spot", amt, px:p?.px || 0, prev:p?.prev || p?.px || 0, unpriced:!p, stable:!!p?.stable, coin: p?.stable ? null : spotCoin(b.token), cost: !p?.stable && entry > 0 ? entry : null});
+    add({sym:b.coin, tok:b.token, loc:"Core spot", amt, px:p?.px || 0, prev:p?.prev || p?.px || 0, unpriced:!p, stable:!!p?.stable, coin: p?.stable ? null : spotCoin(b.token), cost: !p?.stable && entry > 0 ? entry : null});
   }
   const acct = +(ch?.marginSummary?.accountValue || 0);
   const positions = []; let perpDay = 0;
@@ -1100,6 +1102,45 @@ async function evmBsHistory(fns, extras, out){
   out.evmPricing = pricing;
   return fallback;
 }
+// Realized profit on HyperCore spot from your trade history (Hyperliquid keeps your last 10,000 fills).
+// Average-cost method: each sale's profit is the sale price minus the average price you paid, after fees.
+async function spotFills(){
+  const all = [], seen = new Set(); let start = 0;
+  for (let page = 0; page < 6; page++){
+    const res = await info({type:"userFillsByTime", user:ADDR, startTime:start, aggregateByTime:true});
+    if (!Array.isArray(res) || !res.length) break;
+    let maxT = start;
+    for (const f of res){ const k = f.tid + "|" + f.hash + "|" + f.time; if (!seen.has(k)){ seen.add(k); all.push(f); } maxT = Math.max(maxT, +f.time); }
+    if (res.length < 2000 || maxT + 1 <= start) break;
+    start = maxT + 1;
+  }
+  return all;
+}
+function realizedFromFills(fills){
+  const out = {}, M = market;
+  const usdOf = idx => { const p = M.tokenPx[idx]; return !p ? 0 : p.stable ? 1 : (p.px || 0); };
+  const spot = fills.filter(f => M.pairs[f.coin]).sort((a, b) => a.time - b.time || a.tid - b.tid);
+  for (const f of spot){
+    const [base, quote] = M.pairs[f.coin], bt = M.tokens[base]; if (!bt) continue;
+    const qp = M.tokenPx[quote], qv = !qp ? 1 : qp.stable ? 1 : (priceAt(spotCoin(quote), +f.time) ?? qp.px ?? 0);
+    const px = +f.px * qv, sz = +f.sz, fee = +f.fee || 0, bfee = +f.builderFee || 0;
+    if (!(sz > 0) || !(px > 0)) continue;
+    const feeInBase = f.feeToken === bt.name;
+    const feeUsd = (feeInBase ? 0 : (f.feeToken ? fee * usdOf(M.byName[f.feeToken]?.index) : 0)) + bfee * (qp?.stable ? 1 : qv);
+    const r = out[base] ||= {sym:bt.name, q:0, c:0, realized:0, trades:0, bought:0, sold:0};
+    r.trades++;
+    if (f.side === "B"){
+      r.q += sz - (feeInBase ? fee : 0); r.c += sz * px + feeUsd; r.bought += sz * px;
+    } else {
+      const sold = sz + (feeInBase ? fee : 0), proceeds = sz * px - feeUsd - (feeInBase ? fee * px : 0);
+      r.sold += sz * px;
+      const m = Math.min(sold, Math.max(0, r.q));
+      if (m > 0){ const costSold = r.c * m / r.q; r.realized += proceeds * (m / sold) - costSold; r.c -= costSold; r.q -= m; if (r.q < 1e-9){ r.q = 0; r.c = 0; } }
+      // anything sold beyond what these fills bought came from transfers or older trades; its cost isn't known, so no profit is counted for it
+    }
+  }
+  return out;
+}
 async function stakeHistory(fns, extras, out){
   const evs = await info({type:"delegatorHistory", user:ADDR});
   if (!Array.isArray(evs)) return;
@@ -1132,7 +1173,7 @@ async function loadHistory(){
   const from = Math.max(now - 130*DAY, dataStart - 2*DAY);
   let events = [];
   try { events = await loadLedger(from - DAY); } catch { notes.push("Couldn't load your Hyperliquid transfer log, so transfers may show as short spikes on the chart."); }
-  const fns = {}, extras = [], out = {ethMoves:null, evmMoves:null, evmPricing:null, evmPts:{}, stake:null};
+  const fns = {}, extras = [], out = {ethMoves:null, evmMoves:null, evmPricing:null, evmPts:{}, stake:null, fills:null};
   await Promise.all([
     snapshot.ethOk ? ethHistory(fns, extras, out).catch(() => notes.push("Couldn't load your Ethereum history, so past Ethereum values assume today's balances.")) : null,
     snapshot.evmOk ? (async () => {
@@ -1142,6 +1183,7 @@ async function loadHistory(){
       await evmHistory(fns, extras, events, from, out, only);
     })().catch(() => notes.push("Couldn't load past HyperEVM balances, so past HyperEVM values assume today's balances.")) : null,
     stakeHistory(fns, extras, out).catch(() => {}),
+    spotFills().then(f => { out.fills = f; }).catch(() => notes.push("Couldn't load your HyperCore trade history, so profit from past sales is left out.")),
   ]);
   hist = {at:Date.now(), addr:ADDR, events, fns, extras, notes, from, dataStart, out};
 }
@@ -1239,18 +1281,29 @@ function computeCosts(){
       res[h.id] = fromPoints(pts, h.coin);
     }
   }
+  const realized = hist?.out?.fills ? realizedFromFills(hist.out.fills) : null;
+  if (hist) hist.realized = realized;
+  for (const h of snapshot.holdings) h.realized = realized && h.loc === "Core spot" && realized[h.tok] ? realized[h.tok].realized : 0;
   for (const h of snapshot.holdings){
     if (h.stable || h.isMargin || h.unpriced){ h.cost = null; continue; }
     if (h.loc !== "Core spot"){ const r = res[h.id]; h.cost = r && r.q > 0 && r.c > 0 ? r.c / r.q * h.amt : null; }
   }
+}
+// Realized profit on HyperCore coins you no longer hold (hidden coins left out)
+function closedPositions(){
+  const r = hist?.realized; if (!r || !snapshot) return [];
+  const held = new Set(snapshot.holdings.filter(h => h.loc === "Core spot").map(h => h.tok));
+  const hid = new Set((snapshot.hiddenHoldings || []).filter(h => h.loc === "Core spot").map(h => h.tok));
+  return Object.entries(r).filter(([idx, x]) => !held.has(+idx) && !hid.has(+idx) && !hiddenKeys.has("core spot|" + x.sym.toLowerCase()) && Math.abs(x.realized) >= 0.5)
+    .map(([idx, x]) => ({tok:+idx, sym:x.sym, realized:x.realized, trades:x.trades})).sort((a, b) => Math.abs(b.realized) - Math.abs(a.realized));
 }
 function costFields(h){
   if (!(h.amt > 0) || h.stable || h.isMargin) return null;
   const m = manualEntry(h);
   const cost = m ? m * h.amt : h.cost;
   if (!(cost > 0)) return null;
-  const upnl = h.value - cost;
-  return {avg: cost / h.amt, cost, upnl, pct: upnl / cost * 100, manual: !!m};
+  const upnl = h.value - cost, realized = h.realized || 0;
+  return {avg: cost / h.amt, cost, upnl, pct: upnl / cost * 100, manual: !!m, realized, total: upnl + realized};
 }
 
 /* ============ model: value + P&L at any time ============ */
@@ -1580,11 +1633,18 @@ function renderHoldSummary(){
     const d = snapshot.total - snapshot.prevTotal, base = snapshot.prevTotal || 1;
     mk("big " + dirT(d), fmtSigned(d) + " " + fmtPct(d / base * 100)); mk("lbl", "price change on what you hold, past 24h · lines show 7 days"); return;
   }
-  let cost = 0, value = 0, n = 0;
-  for (const h of snapshot.holdings){ const cf = costFields(h); if (cf){ cost += cf.cost; value += h.value; n++; } }
+  let cost = 0, value = 0, n = 0, rHeld = 0;
+  for (const h of snapshot.holdings){ const cf = costFields(h); if (cf){ cost += cf.cost; value += h.value; n++; } rHeld += h.realized || 0; }
+  const closed = closedPositions(), rClosed = closed.reduce((s, x) => s + x.realized, 0), rAll = rHeld + rClosed;
   const pos = snapshot.positions.reduce((s, p) => s + p.upnl, 0);
-  if (!n && !snapshot.positions.length){ mk("lbl", "Entry prices appear once your history has loaded."); return; }
+  if (!n && !snapshot.positions.length && !rAll){ mk("lbl", "Entry prices appear once your history has loaded."); return; }
   const up = value - cost + pos;
+  if (Math.abs(rAll) >= 0.5){
+    const tot = up + rAll;
+    mk("big " + dirT(tot), fmtSigned(tot));
+    mk("lbl", "total profit: " + fmtSignedCompact(up) + " unrealized" + (snapshot.positions.length ? " (incl. perps)" : "") + (rAll >= 0 ? " + " : " − ") + fmtCompact(Math.abs(rAll)) + " realized from HyperCore sales");
+    return;
+  }
   mk("big " + dirT(up), fmtSigned(up) + (cost > 0 ? " " + fmtPct((value - cost) / cost * 100) : ""));
   mk("lbl", "unrealized, vs. your average entry" + (cost > 0 ? " on " + fmtCompact(cost) + " cost" : "") + (snapshot.positions.length ? " + perps" : ""));
 }
@@ -1610,6 +1670,37 @@ function renderHoldings(){
     if (showSmall){
       const wrap = document.createElement("div"); wrap.className = "small-list";
       for (const h of small) wrap.appendChild(holdingRow(h, true));
+      box.appendChild(wrap);
+    }
+  }
+  const closed = closedPositions();
+  if (closed.length){
+    const row = document.createElement("div"); row.className = "hrow small-row";
+    const btn = document.createElement("button"); btn.type = "button"; btn.className = "hbtn"; btn.setAttribute("aria-expanded", String(showClosed));
+    btn.style.gridTemplateColumns = "34px 1fr auto";
+    const badge = document.createElement("span"); badge.className = "badge"; badge.textContent = closed.length;
+    const main = document.createElement("span"); main.className = "hmain";
+    const s1 = document.createElement("span"); s1.className = "hsym"; s1.textContent = "Sold coins";
+    const s2 = document.createElement("span"); s2.className = "hamt"; s2.textContent = (showClosed ? "Hide list" : "Show " + closed.length) + " · realized profit on HyperCore";
+    main.append(s1, s2);
+    const tot = closed.reduce((a, x) => a + x.realized, 0);
+    const val = document.createElement("span"); val.className = "hval"; const v = document.createElement("span"); v.className = "v " + dirT(tot); v.textContent = fmtSigned(tot); val.appendChild(v);
+    btn.append(badge, main, val);
+    btn.addEventListener("click", () => { showClosed = !showClosed; renderHoldings(); });
+    row.appendChild(btn); box.appendChild(row);
+    if (showClosed){
+      const wrap = document.createElement("div"); wrap.className = "small-list";
+      for (const x of closed){
+        const r2 = document.createElement("div"); r2.className = "hrow";
+        const b2 = document.createElement("div"); b2.className = "hbtn"; b2.style.cursor = "default"; b2.style.gridTemplateColumns = "32px minmax(0,1fr) auto";
+        const bd = document.createElement("span"); bd.className = "badge"; bd.textContent = badgeText(x.sym);
+        const mn = document.createElement("span"); mn.className = "hmain";
+        const a1 = document.createElement("span"); a1.className = "hsym"; a1.textContent = x.sym;
+        const a2 = document.createElement("span"); a2.className = "hamt"; a2.textContent = x.trades + (x.trades === 1 ? " trade" : " trades") + " · fully sold";
+        mn.append(a1, a2);
+        const vl = document.createElement("span"); vl.className = "hval"; const vv = document.createElement("span"); vv.className = "v " + dirT(x.realized); vv.textContent = fmtSigned(x.realized); vl.appendChild(vv);
+        b2.append(bd, mn, vl); r2.appendChild(b2); wrap.appendChild(r2);
+      }
       box.appendChild(wrap);
     }
   }
@@ -1655,7 +1746,12 @@ function holdingRow(h, compact, isHidden){
   const v = document.createElement("span"); v.className = "v"; v.textContent = h.unpriced ? "no price" : fmtUsd(h.value);
   const p = h.prev > 0 ? (h.px - h.prev) / h.prev * 100 : 0;
   const c = document.createElement("span");
-  if (holdMode === "pnl" && !h.stable && !h.isMargin){
+  if (holdMode === "pnl" && !h.stable && !h.isMargin && Math.abs(h.realized || 0) >= 0.5){
+    const tot = (cf ? cf.upnl : 0) + h.realized;
+    c.className = "c " + dirT(tot);
+    c.textContent = fmtSignedCompact(tot) + (cf ? " total" : " sold");
+    c.title = (cf ? fmtSignedCompact(cf.upnl) + " unrealized + " : "") + fmtSignedCompact(h.realized) + " realized from past sales";
+  } else if (holdMode === "pnl" && !h.stable && !h.isMargin){
     c.className = "c " + (cf ? dirT(cf.upnl) : "flat-t");
     c.textContent = cf ? fmtSignedCompact(cf.upnl) + " " + fmtPctShort(cf.pct) : "no entry";
     if (!cf) c.title = "Entry price not known for this balance";
@@ -1765,8 +1861,18 @@ function renderDetail(box, h){
     stat("Price", fmtPrice(h.px)); stat("24h", fmtPct(d1), dirT(d1)); stat("7d", fmtPct(d7), dirT(d7)); stat("30d", fmtPct(d30), dirT(d30));
     stats2.innerHTML = "";
     const stat2 = (k, v, cls) => { const s = document.createElement("div"); s.className = "stat"; s.innerHTML = '<span class="k"></span><span class="v"></span>'; s.firstChild.textContent = k; s.lastChild.textContent = v; if (cls) s.lastChild.classList.add(cls); stats2.appendChild(s); };
-    if (cf){ stat2("Avg entry", fmtPrice(cf.avg)); stat2("Cost", fmtCompact(cf.cost)); stat2("Profit", fmtSignedCompact(cf.upnl), dirT(cf.upnl)); stat2("Return", fmtPct(cf.pct), dirT(cf.pct)); }
+    if (cf){ stat2("Avg entry", fmtPrice(cf.avg)); stat2("Cost", fmtCompact(cf.cost)); stat2("Unrealized", fmtSignedCompact(cf.upnl), dirT(cf.upnl)); stat2("Return", fmtPct(cf.pct), dirT(cf.pct)); }
     else { const n = document.createElement("div"); n.className = "sub"; n.style.gridColumn = "1 / -1"; n.textContent = "Entry price isn't known for this balance yet."; stats2.appendChild(n); }
+    const rz = h.realized || 0;
+    if (Math.abs(rz) >= 0.5){
+      const stats3 = document.createElement("div"); stats3.className = "dstats"; box.appendChild(stats3);
+      const r = hist?.realized?.[h.tok];
+      const stat3 = (k, v, cls) => { const s = document.createElement("div"); s.className = "stat"; s.innerHTML = '<span class="k"></span><span class="v"></span>'; s.firstChild.textContent = k; s.lastChild.textContent = v; if (cls) s.lastChild.classList.add(cls); stats3.appendChild(s); };
+      stat3("Realized", fmtSignedCompact(rz), dirT(rz));
+      stat3("Total profit", cf ? fmtSignedCompact(cf.upnl + rz) : "—", cf ? dirT(cf.upnl + rz) : null);
+      stat3("Trades", r ? String(r.trades) : "—");
+      stat3("Sold for", r ? fmtCompact(r.sold) : "—");
+    }
   }).catch(() => { chart.innerHTML = '<div class="sub">Couldn\'t load price history. Try again in a minute.</div>'; });
 }
 function renderPositions(){
