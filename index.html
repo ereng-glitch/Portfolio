@@ -165,6 +165,12 @@ button{font:inherit; color:inherit; -webkit-tap-highlight-color:transparent}
 .x-btn{flex:none; width:28px; height:28px; border-radius:50%; border:0; background:transparent; color:var(--muted); cursor:pointer; display:grid; place-items:center; font-size:16px; line-height:1}
 .x-btn:hover{color:var(--ink); background:var(--surface-3)}
 .hidden-list .hbtn{opacity:.6}
+.hactions{gap:8px; flex-wrap:wrap; align-items:center}
+.entry-edit{display:flex; gap:8px; align-items:center; flex-wrap:wrap; width:100%; justify-content:flex-end}
+.entry-edit label{font-size:12.5px; color:var(--ink-2)}
+.entry-edit input{font-family:var(--mono); font-size:15px; width:130px; padding:6px 9px; border-radius:9px; border:1px solid var(--line-2); background:var(--bg); color:var(--ink)}
+.hide-btn.primary{background:var(--accent); color:var(--accent-ink); border-color:var(--accent)}
+.manual{font-size:10px; font-weight:600; color:var(--accent); margin-left:3px}
 
 /* banners + setup */
 .banner{border-radius:12px; padding:10px 12px; font-size:13px; background:color-mix(in oklab, var(--c4) 14%, var(--surface)); border:1px solid color-mix(in oklab, var(--c4) 35%, var(--line))}
@@ -240,24 +246,6 @@ details.notes p{margin:10px 0 0; line-height:1.55; max-width:65ch}
       <div class="legend-line" id="chartLegend" hidden><span><i></i>Money moved in or out of Hyperliquid</span></div>
     </section>
 
-    <section class="card" aria-labelledby="cH">
-      <div class="card-h">
-        <h2 id="cH">Daily up / down</h2>
-        <span class="sub" id="calRange"></span>
-      </div>
-      <div class="cal-wrap"><div class="cal" id="cal" style="--weeks:12"></div></div>
-      <div class="cal-detail" id="calDetail">Tap a day to see its profit or loss.</div>
-      <div class="cal-legend" aria-hidden="true">
-        <span>Down</span>
-        <span class="cell d4"></span><span class="cell d3"></span><span class="cell d2"></span><span class="cell d1"></span>
-        <span class="cell z"></span>
-        <span class="cell u1"></span><span class="cell u2"></span><span class="cell u3"></span><span class="cell u4"></span>
-        <span>Up</span>
-        <span style="margin-left:auto">0.5% · 2% · 5% steps · striped = estimated</span>
-      </div>
-      <div class="stats" id="stats"></div>
-    </section>
-
     <section class="card" aria-labelledby="aH">
       <div class="card-h">
         <h2 id="aH">Where it sits</h2>
@@ -291,9 +279,9 @@ details.notes p{margin:10px 0 0; line-height:1.55; max-width:65ch}
       <summary>How these numbers work</summary>
       <p><b>Profit and loss</b> leaves out money you deposit, withdraw or move between Hyperliquid, HyperEVM and Ethereum. HyperCore uses Hyperliquid's own P&amp;L history. Wallets and staked HYPE count only price moves on what you held at the time.</p>
       <p><b>Value</b> uses Hyperliquid's account history for HyperCore, merged down to its finest detail. Transfers are placed at the exact minute from your transfer log, so money in transit isn't counted twice. Staked HYPE, HyperEVM and Ethereum balances are rebuilt from your transaction history and priced at each moment.</p>
-      <p><b>Daily up / down</b> is each day's profit or loss. Striped days are older than Hyperliquid's detailed history, so a few days share one estimate.</p>
       <p><b>Average entry</b> for HyperCore spot is Hyperliquid's own cost basis. Tokens moved in from elsewhere count at the price when they arrived. Ethereum tokens use what you paid in the same transaction, or the market price when they arrived. HyperEVM and staked HYPE use the price when the balance went up. Sales lower the cost in proportion, so the average entry stays the same.</p>
       <p><b>Small balances</b> under $20 are grouped at the bottom of Holdings and Where it sits.</p>
+      <p><b>Setting your own entry price</b>: open a holding and tap Set entry price. Your price replaces the calculated average entry for that coin's profit and loss, and is marked SET. Tap Use automatic to go back. This is saved on this device only.</p>
       <p><b>Hiding a coin</b>: open any holding and tap Hide, or tap × on a small balance. Hidden coins are left out of your net worth, P&amp;L and charts, and are listed under Hidden coins at the bottom of Holdings, where you can bring them back. This is saved on this device only.</p>
       <p>Data: Hyperliquid public API, HyperEVM and Ethereum public nodes, Blockscout for Ethereum history, CoinGecko for RAIL. Any ERC-20 token on Ethereum is found automatically. Listed coins are priced by CoinGecko, and DEX-only coins by GeckoTerminal when they have at least $20k of liquidity. Airdropped spam without real liquidity is hidden. On HyperEVM, every token that trades on HyperCore is checked, plus WHYPE and kHYPE.</p>
     </details>
@@ -444,6 +432,17 @@ let allocGroup = store.get("alloc") || "asset";
 let lastLoad = 0, loading = false, selectedDay = null, openRow = null, showSmall = false;
 let holdMode = store.get("hold") || "pnl";
 let showHidden = false;
+let editEntry = null, entryDraft = null; // holding whose entry price is being edited, and what's typed so far
+// Average entry prices you set by hand: {"<address>|<loc>|<token>": price}. Saved on this device.
+let entryOverrides = store.json("entryOverrides") || {};
+const entryKey = h => (ADDR || "") + "|" + hideKey(h);
+const manualEntry = h => { const v = entryOverrides[entryKey(h)]; return v > 0 ? v : null; };
+function setManualEntry(h, price){
+  if (price > 0) entryOverrides[entryKey(h)] = price; else delete entryOverrides[entryKey(h)];
+  store.setJson("entryOverrides", entryOverrides);
+  editEntry = null; entryDraft = null;
+  renderHoldings();
+}
 // Coins you've hidden (scam airdrops etc). Saved on this device, left out of every total.
 const hideKey = h => (h.loc + "|" + ((h.evm && h.evm.address) || h.addr || h.sym)).toLowerCase();
 let hiddenKeys = new Set(store.json("hiddenCoins") || []);
@@ -1142,9 +1141,12 @@ function computeCosts(){
   }
 }
 function costFields(h){
-  if (!(h.cost > 0) || !(h.amt > 0)) return null;
-  const upnl = h.value - h.cost;
-  return {avg: h.cost / h.amt, cost: h.cost, upnl, pct: upnl / h.cost * 100};
+  if (!(h.amt > 0) || h.stable || h.isMargin) return null;
+  const m = manualEntry(h);
+  const cost = m ? m * h.amt : h.cost;
+  if (!(cost > 0)) return null;
+  const upnl = h.value - cost;
+  return {avg: cost / h.amt, cost, upnl, pct: upnl / cost * 100, manual: !!m};
 }
 
 /* ============ model: value + P&L at any time ============ */
@@ -1356,6 +1358,7 @@ function renderRange(){
 /* ============ rendering: calendar ============ */
 const level = p => { const a = Math.abs(p); return a < 0.5 ? 1 : a < 2 ? 2 : a < 5 ? 3 : 4; };
 function renderCalendar(){
+  if (!$("cal")) return; // heat map removed
   const days = model?.days; if (!days || !days.length) return;
   const cal = $("cal"); cal.innerHTML = "";
   const weeks = Math.ceil(days.length / 7);
@@ -1533,6 +1536,7 @@ function holdingRow(h, compact, isHidden){
   const amt = document.createElement("span"); amt.className = "hamt";
   const pnlMode = holdMode === "pnl";
   amt.textContent = h.isMargin ? (h.loc === "Perps margin" ? "Incl. unrealized PnL" : "Vault equity") : fmtAmt(h.amt) + (pnlMode && cf ? " · avg " + fmtPrice(cf.avg) : " " + h.sym);
+  if (pnlMode && cf && cf.manual){ const mk = document.createElement("span"); mk.className = "manual"; mk.textContent = "SET"; mk.title = "Average entry set by you"; amt.appendChild(mk); }
   main.append(sym, amt);
   const val = document.createElement("span"); val.className = "hval";
   const v = document.createElement("span"); v.className = "v"; v.textContent = h.unpriced ? "no price" : fmtUsd(h.value);
@@ -1567,6 +1571,42 @@ function holdingRow(h, compact, isHidden){
   if (openRow === h.id){
     renderDetail(detail, h);
     const act = document.createElement("div"); act.className = "hactions";
+    if (!h.stable && !h.isMargin && !h.unpriced && h.amt > 0){
+      const cur = costFields(h), man = manualEntry(h);
+      if (editEntry === h.id){
+        const f = document.createElement("form"); f.className = "entry-edit";
+        const lb = document.createElement("label"); lb.textContent = "Avg entry $";
+        const inp = document.createElement("input"); inp.type = "text"; inp.inputMode = "decimal"; inp.autocomplete = "off";
+        inp.placeholder = "e.g. 25.40"; inp.value = entryDraft != null ? entryDraft : cur ? String(+cur.avg.toPrecision(6)) : "";
+        inp.addEventListener("input", () => { entryDraft = inp.value; });
+        lb.htmlFor = inp.id = "entryIn"; 
+        const save = document.createElement("button"); save.type = "submit"; save.className = "hide-btn primary"; save.textContent = "Save";
+        const cancel = document.createElement("button"); cancel.type = "button"; cancel.className = "hide-btn"; cancel.textContent = "Cancel";
+        cancel.addEventListener("click", ev => { ev.stopPropagation(); editEntry = null; entryDraft = null; renderHoldings(); });
+        f.addEventListener("click", ev => ev.stopPropagation());
+        f.addEventListener("submit", ev => {
+          ev.preventDefault();
+          const v = parseFloat(inp.value.replace(/[$,\s]/g, ""));
+          if (!(v > 0)){ inp.style.borderColor = "var(--down)"; inp.focus(); return; }
+          setManualEntry(h, v);
+        });
+        f.append(lb, inp);
+        if (man){
+          const reset = document.createElement("button"); reset.type = "button"; reset.className = "hide-btn"; reset.textContent = "Use automatic";
+          reset.title = "Remove your price and go back to the calculated average entry";
+          reset.addEventListener("click", ev => { ev.stopPropagation(); setManualEntry(h, 0); });
+          f.append(reset);
+        }
+        f.append(cancel, save);
+        act.appendChild(f);
+        setTimeout(() => { try { inp.focus(); inp.select(); } catch {} }, 0);
+      } else {
+        const eb = document.createElement("button"); eb.type = "button"; eb.className = "hide-btn";
+        eb.textContent = man ? "Edit entry price" : "Set entry price";
+        eb.addEventListener("click", ev => { ev.stopPropagation(); editEntry = h.id; entryDraft = null; renderHoldings(); });
+        act.appendChild(eb);
+      }
+    }
     const hb = document.createElement("button"); hb.type = "button"; hb.className = "hide-btn";
     hb.textContent = "Hide " + h.sym; hb.title = "Leave this coin out of your totals. You can show it again under Hidden coins.";
     hb.addEventListener("click", ev => { ev.stopPropagation(); setHidden(h, true); });
