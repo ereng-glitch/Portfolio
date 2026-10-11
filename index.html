@@ -157,6 +157,14 @@ button{font:inherit; color:inherit; -webkit-tap-highlight-color:transparent}
 .small-list .hbtn{cursor:default; grid-template-columns:32px minmax(0,1fr) auto}
 .small-list .badge i{border-color:var(--bg)}
 @media (max-width:360px){ .hbtn{grid-template-columns:32px minmax(0,1fr) auto} .hbtn .spark{display:none} }
+.hactions{display:flex; justify-content:flex-end; padding:0 0 12px}
+.hide-btn{background:transparent; border:1px solid var(--line-2); border-radius:9px; padding:6px 11px; font:inherit; font-size:12.5px; font-weight:600; color:var(--ink-2); cursor:pointer}
+.hide-btn:hover{color:var(--ink); border-color:var(--muted)}
+.crow{display:flex; align-items:center; gap:6px}
+.crow .hbtn{flex:1; min-width:0}
+.x-btn{flex:none; width:28px; height:28px; border-radius:50%; border:0; background:transparent; color:var(--muted); cursor:pointer; display:grid; place-items:center; font-size:16px; line-height:1}
+.x-btn:hover{color:var(--ink); background:var(--surface-3)}
+.hidden-list .hbtn{opacity:.6}
 
 /* banners + setup */
 .banner{border-radius:12px; padding:10px 12px; font-size:13px; background:color-mix(in oklab, var(--c4) 14%, var(--surface)); border:1px solid color-mix(in oklab, var(--c4) 35%, var(--line))}
@@ -286,6 +294,7 @@ details.notes p{margin:10px 0 0; line-height:1.55; max-width:65ch}
       <p><b>Daily up / down</b> is each day's profit or loss. Striped days are older than Hyperliquid's detailed history, so a few days share one estimate.</p>
       <p><b>Average entry</b> for HyperCore spot is Hyperliquid's own cost basis. Tokens moved in from elsewhere count at the price when they arrived. Ethereum tokens use what you paid in the same transaction, or the market price when they arrived. HyperEVM and staked HYPE use the price when the balance went up. Sales lower the cost in proportion, so the average entry stays the same.</p>
       <p><b>Small balances</b> under $20 are grouped at the bottom of Holdings and Where it sits.</p>
+      <p><b>Hiding a coin</b>: open any holding and tap Hide, or tap × on a small balance. Hidden coins are left out of your net worth, P&amp;L and charts, and are listed under Hidden coins at the bottom of Holdings, where you can bring them back. This is saved on this device only.</p>
       <p>Data: Hyperliquid public API, HyperEVM and Ethereum public nodes, Blockscout for Ethereum history, CoinGecko for RAIL. Any ERC-20 token on Ethereum is found automatically. Listed coins are priced by CoinGecko, and DEX-only coins by GeckoTerminal when they have at least $20k of liquidity. Airdropped spam without real liquidity is hidden. On HyperEVM, every token that trades on HyperCore is checked, plus WHYPE and kHYPE.</p>
     </details>
   </main>
@@ -434,6 +443,30 @@ let range = store.get("range2") || "1W"; if (!RANGES[range]) range = "1W";
 let allocGroup = store.get("alloc") || "asset";
 let lastLoad = 0, loading = false, selectedDay = null, openRow = null, showSmall = false;
 let holdMode = store.get("hold") || "pnl";
+let showHidden = false;
+// Coins you've hidden (scam airdrops etc). Saved on this device, left out of every total.
+const hideKey = h => (h.loc + "|" + ((h.evm && h.evm.address) || h.addr || h.sym)).toLowerCase();
+let hiddenKeys = new Set(store.json("hiddenCoins") || []);
+const saveHidden = () => store.setJson("hiddenCoins", [...hiddenKeys]);
+function sumSnapshot(snap){
+  snap.total = snap.holdings.reduce((s, h) => s + h.value, 0);
+  snap.prevTotal = snap.holdings.reduce((s, h) => s + h.prevValue, 0);
+  snap.coreNow = snap.holdings.filter(h => CORE_LOCS.has(h.loc)).reduce((s, h) => s + h.value, 0);
+}
+function setHidden(h, hide){
+  const k = hideKey(h);
+  if (hide) hiddenKeys.add(k); else hiddenKeys.delete(k);
+  saveHidden();
+  if (!snapshot) return;
+  const from = hide ? snapshot.holdings : snapshot.hiddenHoldings, to = hide ? snapshot.hiddenHoldings : snapshot.holdings;
+  const i = from.indexOf(h); if (i >= 0){ from.splice(i, 1); to.push(h); }
+  if (openRow === h.id) openRow = null;
+  sumSnapshot(snapshot);
+  renderTotal(); renderAlloc(); renderHoldings();
+  // rebuild value history and P&L without (or with) this coin
+  if (hist) hist.at = 0;
+  load(false);
+}
 let evmScan = null;
 let dexScan = null; // builder-deployed perp exchanges (HIP-3) where you have margin: {addr, at, active:[names]} // {addr, at, held:Set of token indexes}
 const detailRange = {};
@@ -646,11 +679,12 @@ async function loadAccount(full){
       add({sym:tk.sym, loc:"Ethereum", amt, px:pr.p.px, prev:pr.p.prev, stable:pr.stable, coin:pr.coin});
     });
   }
-  const total = holdings.reduce((s, h) => s + h.value, 0);
-  const prevTotal = holdings.reduce((s, h) => s + h.prevValue, 0);
-  const coreNow = holdings.filter(h => CORE_LOCS.has(h.loc)).reduce((s, h) => s + h.value, 0);
+  const hiddenHoldings = holdings.filter(h => hiddenKeys.has(hideKey(h)));
+  const shown = holdings.filter(h => !hiddenKeys.has(hideKey(h)));
   const pmap = {}; if (Array.isArray(portfolio)) for (const [k, v] of portfolio) pmap[k] = v;
-  return {holdings, positions, portfolio:pmap, total, prevTotal, coreNow, errors, ethOk:!!ethRes, evmOk:!!evmRes, at:Date.now(), hidden, ethFound};
+  const snap = {holdings:shown, hiddenHoldings, positions, portfolio:pmap, errors, ethOk:!!ethRes, evmOk:!!evmRes, at:Date.now(), hidden, ethFound:ethFound.filter(f => !hiddenKeys.has(("Ethereum|" + f.addr).toLowerCase()))};
+  sumSnapshot(snap);
+  return snap;
 }
 
 /* ============ price history ============ */
@@ -1463,10 +1497,29 @@ function renderHoldings(){
       box.appendChild(wrap);
     }
   }
-  if (!all.length) box.innerHTML = '<div class="sub">Nothing here yet. If you just moved funds, tap refresh in a minute.</div>';
+  const hid = snapshot.hiddenHoldings || [];
+  if (hid.length){
+    const row = document.createElement("div"); row.className = "hrow small-row";
+    const btn = document.createElement("button"); btn.type = "button"; btn.className = "hbtn"; btn.setAttribute("aria-expanded", String(showHidden));
+    btn.style.gridTemplateColumns = "34px 1fr auto";
+    const badge = document.createElement("span"); badge.className = "badge"; badge.textContent = hid.length;
+    const main = document.createElement("span"); main.className = "hmain";
+    const s1 = document.createElement("span"); s1.className = "hsym"; s1.textContent = "Hidden coins";
+    const s2 = document.createElement("span"); s2.className = "hamt"; s2.textContent = (showHidden ? "Hide list" : "Show " + hid.length) + " · not counted in totals";
+    main.append(s1, s2);
+    btn.append(badge, main, document.createElement("span"));
+    btn.addEventListener("click", () => { showHidden = !showHidden; renderHoldings(); });
+    row.appendChild(btn); box.appendChild(row);
+    if (showHidden){
+      const wrap = document.createElement("div"); wrap.className = "small-list hidden-list";
+      for (const h of hid.slice().sort((a, b) => b.value - a.value)) wrap.appendChild(holdingRow(h, true, true));
+      box.appendChild(wrap);
+    }
+  }
+  if (!all.length && !hid.length) box.innerHTML = '<div class="sub">Nothing here yet. If you just moved funds, tap refresh in a minute.</div>';
   renderPositions();
 }
-function holdingRow(h, compact){
+function holdingRow(h, compact, isHidden){
   const row = document.createElement("div"); row.className = "hrow";
   const btn = document.createElement(compact ? "div" : "button"); if (!compact) btn.type = "button"; btn.className = "hbtn";
   const badge = document.createElement("span"); badge.className = "badge"; badge.textContent = badgeText(h.isMargin ? "USD" : h.sym);
@@ -1491,7 +1544,16 @@ function holdingRow(h, compact){
     if (!cf) c.title = "Entry price not known for this balance";
   } else { c.className = "c " + (h.stable || h.isMargin ? "flat-t" : dirT(p)); c.textContent = h.stable || h.isMargin ? "—" : fmtPct(p); }
   val.append(v, c);
-  if (compact){ btn.append(badge, main, val); row.appendChild(btn); return row; }
+  if (compact){
+    btn.append(badge, main, val);
+    const x = document.createElement("button"); x.type = "button"; x.className = "x-btn";
+    x.textContent = isHidden ? "↺" : "×";
+    x.title = isHidden ? "Show " + h.sym + " again" : "Hide " + h.sym;
+    x.setAttribute("aria-label", x.title);
+    x.addEventListener("click", ev => { ev.stopPropagation(); setHidden(h, !isHidden); });
+    const line = document.createElement("div"); line.className = "crow"; line.append(btn, x);
+    row.appendChild(line); return row;
+  }
   if (pnlMode){ btn.classList.add("nospark"); btn.append(badge, main, val); }
   else {
     const spark = document.createElement("span"); spark.className = "spark";
@@ -1502,7 +1564,14 @@ function holdingRow(h, compact){
   btn.setAttribute("aria-expanded", String(openRow === h.id));
   btn.addEventListener("click", () => { openRow = openRow === h.id ? null : h.id; renderHoldings(); });
   row.append(btn, detail);
-  if (openRow === h.id) renderDetail(detail, h);
+  if (openRow === h.id){
+    renderDetail(detail, h);
+    const act = document.createElement("div"); act.className = "hactions";
+    const hb = document.createElement("button"); hb.type = "button"; hb.className = "hide-btn";
+    hb.textContent = "Hide " + h.sym; hb.title = "Leave this coin out of your totals. You can show it again under Hidden coins.";
+    hb.addEventListener("click", ev => { ev.stopPropagation(); setHidden(h, true); });
+    act.appendChild(hb); row.appendChild(act);
+  }
   return row;
 }
 function renderDetail(box, h){
