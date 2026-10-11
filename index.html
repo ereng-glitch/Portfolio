@@ -279,11 +279,11 @@ details.notes p{margin:10px 0 0; line-height:1.55; max-width:65ch}
       <summary>How these numbers work</summary>
       <p><b>Profit and loss</b> leaves out money you deposit, withdraw or move between Hyperliquid, HyperEVM and Ethereum. HyperCore uses Hyperliquid's own P&amp;L history. Wallets and staked HYPE count only price moves on what you held at the time.</p>
       <p><b>Value</b> uses Hyperliquid's account history for HyperCore, merged down to its finest detail. Transfers are placed at the exact minute from your transfer log, so money in transit isn't counted twice. Staked HYPE, HyperEVM and Ethereum balances are rebuilt from your transaction history and priced at each moment.</p>
-      <p><b>Average entry</b> for HyperCore spot is Hyperliquid's own cost basis. Tokens moved in from elsewhere count at the price when they arrived. Ethereum tokens use what you paid in the same transaction, or the market price when they arrived. HyperEVM and staked HYPE use the price when the balance went up. Sales lower the cost in proportion, so the average entry stays the same.</p>
+      <p><b>Average entry</b> for HyperCore spot is Hyperliquid's own cost basis. Tokens moved in from elsewhere count at the price when they arrived. Ethereum tokens use what you paid in the same transaction, or the market price when they arrived. HyperEVM tokens use what you paid in the same transaction, like Ethereum. Staked HYPE uses the price when the balance went up. Sales lower the cost in proportion, so the average entry stays the same.</p>
       <p><b>Small balances</b> under $20 are grouped at the bottom of Holdings and Where it sits.</p>
       <p><b>Setting your own entry price</b>: open a holding and tap Set entry price. Your price replaces the calculated average entry for that coin's profit and loss, and is marked SET. Tap Use automatic to go back. This is saved on this device only.</p>
       <p><b>Hiding a coin</b>: open any holding and tap Hide, or tap × on a small balance. Hidden coins are left out of your net worth, P&amp;L and charts, and are listed under Hidden coins at the bottom of Holdings, where you can bring them back. This is saved on this device only.</p>
-      <p>Data: Hyperliquid public API, HyperEVM and Ethereum public nodes, Blockscout for Ethereum history, CoinGecko for RAIL. Any ERC-20 token on Ethereum is found automatically. Listed coins are priced by CoinGecko, and DEX-only coins by GeckoTerminal when they have at least $20k of liquidity. Airdropped spam without real liquidity is hidden. On HyperEVM, every token that trades on HyperCore is checked, plus WHYPE and kHYPE.</p>
+      <p>Data: Hyperliquid public API, HyperEVM and Ethereum public nodes, Blockscout for Ethereum history, CoinGecko for RAIL. Any ERC-20 token on Ethereum is found automatically. Listed coins are priced by CoinGecko, and DEX-only coins by GeckoTerminal when they have at least $20k of liquidity. Airdropped spam without real liquidity is hidden. On HyperEVM, every token that trades on HyperCore is checked, plus WHYPE, kHYPE and any other token Blockscout (hyperscan.com) finds in your wallet. Past HyperEVM balances come from your Blockscout transfer history, so buys and sells show at the exact time, including coins you've since sold. If a token's transfers don't add up to today's balance, its past is read from the chain once a day instead.</p>
     </details>
   </main>
 </div>
@@ -315,6 +315,7 @@ const EVM_EXTRA = [
   {sym:"kHYPE", addr:"0xfd739d4e423301ce9385c1fb8850539d657c296d", dec:18},
 ];
 const GT = "https://api.geckoterminal.com/api/v2";
+const HS = "https://www.hyperscan.com/api/v2/addresses/"; // Blockscout for HyperEVM (same API as eth.blockscout.com)
 const MIN_LIQ = 20000; // DEX-only tokens need this much liquidity to be priced (filters spam airdrops)
 const LOCS = {"Core spot":"var(--c1)", "Perps margin":"var(--c2)", "Vaults":"var(--c3)", "Staked HYPE":"var(--c4)", "HyperEVM":"var(--c5)", "Ethereum":"var(--c6)"};
 const LOC_SHORT = {"Core spot":"Core", "Perps margin":"Perps", "Vaults":"Vault", "Staked HYPE":"Staked", "HyperEVM":"EVM", "Ethereum":"Eth"};
@@ -593,14 +594,21 @@ async function loadAccount(full){
     .catch(() => { errors.push("Couldn't reach an Ethereum node, so Ethereum balances are left out."); return null; });
   const bsTokens = fetchJSON("https://eth.blockscout.com/api/v2/addresses/" + a + "/token-balances", null, 15000)
     .catch(() => { errors.push("Couldn't check Ethereum for less common tokens right now, so only major ones are shown."); return null; });
-  const [[ch, spot, deleg, vaults, portfolio], evmRes, ethRes, bsRes] = await Promise.all([hl, evm, eth, bsTokens]);
+  const evmBsTokens = fetchJSON(HS + a + "/token-balances", null, 15000).catch(() => null);
+  const [[ch, spot, deleg, vaults, portfolio], evmRes, ethRes, bsRes, evmBsRes] = await Promise.all([hl, evm, eth, bsTokens, evmBsTokens]);
+  // Any other ERC-20 you hold on HyperEVM (tokens that don't trade on HyperCore)
+  const evmKnown = new Set(EVM_EXTRA.map(x => x.addr.toLowerCase()));
+  for (const t of Object.values(market.tokens)) if (t.evmContract?.address) evmKnown.add(t.evmContract.address.toLowerCase());
+  const evmFound = (Array.isArray(evmBsRes) ? evmBsRes : []).filter(x => x.token && x.token.type === "ERC-20" && x.token.reputation !== "scam" && +x.value > 0 && !evmKnown.has((x.token.address_hash || x.token.address || "").toLowerCase()))
+    .map(x => ({addr:(x.token.address_hash || x.token.address).toLowerCase(), sym:x.token.symbol || "?", dec:+x.token.decimals || 18, raw:x.value, rate:+x.token.exchange_rate || 0}));
   // Any other ERC-20 you hold on Ethereum (spam airdrops without real liquidity are left out)
   const staticAddr = new Set(ETH_TOKENS.map(t => t.addr.toLowerCase()));
   const found = (Array.isArray(bsRes) ? bsRes : []).filter(x => x.token && x.token.type === "ERC-20" && x.token.reputation !== "scam" && +x.value > 0 && !staticAddr.has((x.token.address_hash || x.token.address || "").toLowerCase()))
     .map(x => ({addr:(x.token.address_hash || x.token.address).toLowerCase(), sym:x.token.symbol || "?", dec:+x.token.decimals || 18, raw:x.value, rate:+x.token.exchange_rate || 0}));
   const evmExtraHeld = evmRes ? EVM_EXTRA.filter((x, i) => hexToNum(evmRes[1 + evmTokens.length + i], x.dec) > 0 && !x.asHype) : [];
-  await Promise.all([gtLookup("eth", found.map(f => f.addr)), evmExtraHeld.length ? gtLookup("hyperevm", evmExtraHeld.map(x => x.addr)) : null]);
-  await cgPrices(found.map(f => tokInfo["eth:" + f.addr]?.cg).concat(evmExtraHeld.map(x => tokInfo["hyperevm:" + x.addr.toLowerCase()]?.cg)));
+  const evmLook = evmExtraHeld.map(x => x.addr).concat(evmFound.map(f => f.addr));
+  await Promise.all([gtLookup("eth", found.map(f => f.addr)), evmLook.length ? gtLookup("hyperevm", evmLook) : null]);
+  await cgPrices(found.map(f => tokInfo["eth:" + f.addr]?.cg).concat(evmLook.map(ad => tokInfo["hyperevm:" + ad.toLowerCase()]?.cg)));
 
   const holdings = [];
   const add = h => {
@@ -658,9 +666,17 @@ async function loadAccount(full){
       add({sym:x.t.name, loc:"HyperEVM", amt, px:p.px, prev:p.prev, stable:!!p.stable, coin: p.stable ? null : spotCoin(x.t.index), evm:{address:x.t.evmContract.address, dec:x.dec}});
     });
   }
+  let hidden = 0;
+  for (const f of evmFound){
+    const amt = hexToNum("0x" + BigInt(f.raw).toString(16), f.dec);
+    const pr = tokenPricing("hyperevm", f.addr, f.rate);
+    if (!pr || !amt){ if (amt) hidden++; continue; }
+    let sym = f.sym; if (holdings.some(h => h.loc === "HyperEVM" && h.sym === sym)) sym = sym + " " + f.addr.slice(2, 6);
+    add({sym, loc:"HyperEVM", amt, px:pr.p.px, prev:pr.p.prev, coin:pr.coin, evm:{address:f.addr, dec:f.dec}});
+  }
   ethPricing = {ETH:{stable:false, coin:"hl:ETH"}};
   for (const tk of ETH_TOKENS){ const pr = ethTokenPricing(tk); ethPricing[tk.sym] = {stable:pr.stable, coin:pr.coin}; }
-  let hidden = 0; const ethFound = [];
+  const ethFound = [];
   for (const f of found){
     const amt = hexToNum("0x" + BigInt(f.raw).toString(16), f.dec);
     const pr = tokenPricing("eth", f.addr, f.rate);
@@ -864,10 +880,10 @@ function walkBack(events, now){
   for (let i = events.length - 1; i >= 0; i--){ pts.unshift([events[i][0], Math.max(0, b)]); b -= events[i][1]; }
   return stepFn(pts, Math.max(0, b));
 }
-async function blockscoutPages(path, maxPages){
+async function blockscoutPages(path, maxPages, base){
   const items = []; let params = null;
   for (let i = 0; i < maxPages; i++){
-    let url = "https://eth.blockscout.com/api/v2/addresses/" + ADDR + path;
+    let url = (base || "https://eth.blockscout.com/api/v2/addresses/") + ADDR + path;
     if (params){ const q = new URLSearchParams(); for (const k in params) if (params[k] != null) q.set(k, params[k]); url += (path.includes("?") ? "&" : "?") + q.toString(); }
     const j = await fetchJSON(url, null, 20000);
     items.push(...(j.items || []));
@@ -928,7 +944,7 @@ async function ethHistory(fns, extras, out){
 }
 // Past HyperEVM balances: read at a block for each day you held the token, and just before and after
 // each move between HyperCore and HyperEVM. Old readings are cached on this device.
-async function evmHistory(fns, extras, events, from, out){
+async function evmHistory(fns, extras, events, from, out, only){
   const now = Date.now(), toks = new Map();
   for (const h of snapshot.holdings) if (h.loc === "HyperEVM" && h.evm)
     toks.set(h.sym, {sym:h.sym, evm:h.evm, held:h, idx: h.evm.native ? market.hypeIdx : market.byName[h.sym]?.index, evs:[]});
@@ -945,6 +961,7 @@ async function evmHistory(fns, extras, events, from, out){
     }
     tk.evs.push(e.t);
   }
+  if (only) for (const k of [...toks.keys()]) if (!only.has(k)) toks.delete(k);
   if (!toks.size) return;
   const [bnHex] = await rpcBatch(HYPEREVM_RPCS, [{method:"eth_blockNumber", params:[]}]);
   const bn = parseInt(bnHex, 16);
@@ -1012,6 +1029,77 @@ async function evmHistory(fns, extras, events, from, out){
     }
   }
 }
+// Past HyperEVM balances from Blockscout: every token transfer with its exact time, including coins
+// you've since sold. Each token is checked: if its transfers don't add up to today's balance (for example
+// HyperCore bridge credits the indexer missed), it's handed back to the block-by-block method.
+// Returns the set of tokens that still need that fallback.
+async function evmBsHistory(fns, extras, out){
+  const [items, coin] = await Promise.all([blockscoutPages("/token-transfers?type=ERC-20", 20, HS), blockscoutPages("/coin-balance-history", 10, HS)]);
+  const fallback = new Set(), moves = [], pricing = {};
+  const used = new Set(), uniq = (sym, ad) => { let s = sym; if (used.has(s)) s = sym + " " + ad.slice(2, 6); used.add(s); return s; };
+  const byAddr = {}; let nativeHeld = null;
+  for (const h of snapshot.holdings) if (h.loc === "HyperEVM" && h.evm){
+    if (h.evm.native){ nativeHeld = h; continue; }
+    const ad = h.evm.address.toLowerCase(); used.add(h.sym);
+    byAddr[ad] = {sym:h.sym, held:h, pr:{stable:!!h.stable, coin:h.stable ? null : h.coin, px:h.px}};
+  }
+  const evmIdx = {}; for (const t of Object.values(market.tokens)) if (t.evmContract?.address) evmIdx[t.evmContract.address.toLowerCase()] = t;
+  const extraBy = {}; for (const x of EVM_EXTRA) extraBy[x.addr.toLowerCase()] = x;
+  const hp = market.tokenPx[market.hypeIdx], unknown = {};
+  for (const it of items){
+    const ad = (it.token?.address_hash || it.token?.address || "").toLowerCase();
+    if (!ad || byAddr[ad] || unknown[ad] || it.token?.reputation === "scam" || hiddenKeys.has("hyperevm|" + ad)) continue;
+    const t = evmIdx[ad], x = extraBy[ad];
+    if (t){ const p = market.tokenPx[t.index]; if (p) byAddr[ad] = {sym:uniq(t.name, ad), pr:{stable:!!p.stable, coin:p.stable ? null : spotCoin(t.index), px:p.px}}; }
+    else if (x && x.asHype){ if (hp) byAddr[ad] = {sym:uniq(x.sym, ad), pr:{stable:false, coin:spotCoin(market.hypeIdx), px:hp.px}}; }
+    else unknown[ad] = {sym:x ? x.sym : (it.token?.symbol || "?")};
+  }
+  const unk = Object.keys(unknown).slice(0, 30);
+  if (unk.length){
+    await gtLookup("hyperevm", unk);
+    await cgPrices(unk.map(ad => tokInfo["hyperevm:" + ad]?.cg));
+    for (const ad of unk){
+      const pr = tokenPricing("hyperevm", ad, 0); if (!pr || !pr.coin) continue;
+      byAddr[ad] = {sym:uniq(unknown[ad].sym, ad), pr:{stable:false, coin:pr.coin, px:pr.p.px}};
+    }
+  }
+  const ev = {}, txOf = {};
+  for (const it of items){
+    const ad = (it.token?.address_hash || it.token?.address || "").toLowerCase(), tk = byAddr[ad]; if (!tk) continue;
+    const from = (it.from?.hash || "").toLowerCase(), to = (it.to?.hash || "").toLowerCase();
+    const amt = +(it.total?.value || 0) / Math.pow(10, +(it.total?.decimals ?? it.token?.decimals ?? 18));
+    let d = 0; if (to === ADDR) d += amt; if (from === ADDR) d -= amt;
+    const t = Date.parse(it.timestamp);
+    if (d && isFinite(t)){ (ev[ad] ||= []).push([t, d]); (txOf[ad] ||= []).push({t, dq:d, tx:it.transaction_hash || it.tx_hash || ""}); }
+  }
+  for (const ad in byAddr){
+    const tk = byAddr[ad], cur = tk.held ? tk.held.amt : 0, e = ev[ad];
+    if (!e){ if (tk.held) fallback.add(tk.sym); continue; }
+    // check the transfers explain today's balance, starting from zero
+    e.sort((x, y) => x[0] - y[0]);
+    let b = cur; for (const [, d] of e) b -= d;
+    let peak = Math.abs(cur), low = b, run = b;
+    for (const [, d] of e){ run += d; peak = Math.max(peak, Math.abs(run)); low = Math.min(low, run); }
+    const tol = Math.max(1e-9, peak * 0.01);
+    if (Math.abs(b) > tol || low < -tol){ fallback.add(tk.sym); continue; }
+    const id = "HyperEVM|" + tk.sym, fn = walkBack(e, cur);
+    fns[id] = fn; pricing[tk.sym] = tk.pr;
+    for (const m of txOf[ad]) moves.push({t:m.t, sym:tk.sym, dq:m.dq, tx:m.tx});
+    if (!tk.held && (tk.pr.coin || tk.pr.stable)) extras.push({id, sym:tk.sym, loc:"HyperEVM", amt:0, px:tk.pr.px || 0, coin:tk.pr.coin, stable:tk.pr.stable, balFn:fn});
+  }
+  // native HYPE: Blockscout keeps the balance after every change
+  const pts = coin.map(i => [Date.parse(i.block_timestamp), +i.value / 1e18, +i.delta / 1e18, i.transaction_hash || ""]).filter(p => isFinite(p[0])).sort((x, y) => x[0] - y[0]);
+  const nowAmt = nativeHeld ? nativeHeld.amt : 0;
+  if (pts.length && Math.abs(pts[pts.length - 1][1] - nowAmt) <= Math.max(0.001, nowAmt * 0.01)){
+    const fn = stepFn(pts.map(p => [p[0], p[1]]), Math.max(0, pts[0][1] - pts[0][2]));
+    fns["HyperEVM|HYPE"] = fn; pricing.HYPE = {stable:false, coin:spotCoin(market.hypeIdx), px:hp?.px};
+    for (const p of pts) if (p[2]) moves.push({t:p[0], sym:"HYPE", dq:p[2], tx:p[3]});
+    if (!nativeHeld && hp && pts.some(p => p[1] > 0)) extras.push({id:"HyperEVM|HYPE", sym:"HYPE", loc:"HyperEVM", amt:0, px:hp.px, coin:spotCoin(market.hypeIdx), stable:false, balFn:fn});
+  } else if (nativeHeld || pts.length) fallback.add("HYPE");
+  out.evmMoves = moves.sort((x, y) => x.t - y.t);
+  out.evmPricing = pricing;
+  return fallback;
+}
 async function stakeHistory(fns, extras, out){
   const evs = await info({type:"delegatorHistory", user:ADDR});
   if (!Array.isArray(evs)) return;
@@ -1044,10 +1132,15 @@ async function loadHistory(){
   const from = Math.max(now - 130*DAY, dataStart - 2*DAY);
   let events = [];
   try { events = await loadLedger(from - DAY); } catch { notes.push("Couldn't load your Hyperliquid transfer log, so transfers may show as short spikes on the chart."); }
-  const fns = {}, extras = [], out = {ethMoves:null, evmPts:{}, stake:null};
+  const fns = {}, extras = [], out = {ethMoves:null, evmMoves:null, evmPricing:null, evmPts:{}, stake:null};
   await Promise.all([
     snapshot.ethOk ? ethHistory(fns, extras, out).catch(() => notes.push("Couldn't load your Ethereum history, so past Ethereum values assume today's balances.")) : null,
-    snapshot.evmOk ? evmHistory(fns, extras, events, from, out).catch(() => notes.push("Couldn't load past HyperEVM balances, so past HyperEVM values assume today's balances.")) : null,
+    snapshot.evmOk ? (async () => {
+      let only = null;
+      try { only = await evmBsHistory(fns, extras, out); } catch { only = null; out.evmMoves = null; out.evmPricing = null; }
+      if (only && !only.size) return;
+      await evmHistory(fns, extras, events, from, out, only);
+    })().catch(() => notes.push("Couldn't load past HyperEVM balances, so past HyperEVM values assume today's balances.")) : null,
     stakeHistory(fns, extras, out).catch(() => {}),
   ]);
   hist = {at:Date.now(), addr:ADDR, events, fns, extras, notes, from, dataStart, out};
@@ -1068,8 +1161,10 @@ async function ensureAllSeries(){
   for (const h of (snapshot.hiddenHoldings || [])) if (h.loc === "Core spot" && h.coin && !coins.includes(h.coin)) coins.push(h.coin);
   const visible = snapshot.holdings.filter(h => h.coin && h.value >= SMALL).map(h => h.coin).filter(c => !coins.includes(c));
   const moves = hist?.out?.ethMoves || [];
-  const costCoins = [...new Set(moves.map(m => ethSymPricing(m.sym)).filter(p => p && !p.stable).map(p => p.coin))];
-  const costFrom = moves.length ? Math.max(Date.now() - 790*DAY, moves[0].t - DAY) : Date.now();
+  const evMoves = hist?.out?.evmMoves || [];
+  const costCoins = [...new Set(moves.map(m => ethSymPricing(m.sym)).concat(evMoves.map(m => hist.out.evmPricing?.[m.sym])).filter(p => p && !p.stable && p.coin).map(p => p.coin))];
+  const firstMove = Math.min(moves.length ? moves[0].t : Infinity, evMoves.length ? evMoves[0].t : Infinity);
+  const costFrom = isFinite(firstMove) ? Math.max(Date.now() - 790*DAY, firstMove - DAY) : Date.now();
   await Promise.all([ensureSeries(coins, earliest), ensureSeries(visible, Date.now() - 8*DAY, ["1h"]), costCoins.length ? ensureSeries(costCoins, costFrom) : null]);
 }
 
@@ -1087,35 +1182,38 @@ function avgCostRun(steps){
   }
   return {q, c};
 }
+// Average entry from transfers: a buy's cost is what left the wallet in the same transaction,
+// otherwise the market price at that moment.
+function swapCosts(moves, pricingOf, loc, res){
+  if (!moves || !moves.length) return;
+  const byTx = {}; for (const m of moves) if (m.tx) (byTx[m.tx] ||= []).push(m);
+  const steps = {};
+  for (const m of moves){
+    const pr = pricingOf(m.sym); if (!pr || pr.stable) continue;
+    let cost = null;
+    if (m.dq > 0){
+      const same = m.tx ? byTx[m.tx] : [];
+      const outs = same.filter(x => x.dq < 0 && x.sym !== m.sym), ins = same.filter(x => x.dq > 0);
+      if (outs.length && ins.length === 1){
+        let v = 0, ok = true;
+        for (const o of outs){ const p = pxOf(pricingOf(o.sym), m.t); if (p == null){ ok = false; break; } v += -o.dq * p; }
+        if (ok && v > 0) cost = v;
+      }
+      if (cost == null){ const p = pxOf(pr, m.t); if (p == null) continue; cost = m.dq * p; }
+    }
+    (steps[m.sym] ||= []).push({t:m.t, dq:m.dq, cost});
+  }
+  for (const sym in steps){
+    const id = loc + "|" + sym, arr = steps[sym];
+    const fn = hist.fns[id], b0 = fn ? fn(arr[0].t - 1) : 0;
+    if (b0 > 0){ const p = pxOf(pricingOf(sym), arr[0].t); if (p != null) arr.unshift({t:arr[0].t - 1, dq:b0, cost:b0 * p}); }
+    res[id] = avgCostRun(arr);
+  }
+}
 function computeCosts(){
   const res = {};
-  const moves = hist?.out?.ethMoves;
-  if (moves && moves.length){
-    const byTx = {}; for (const m of moves) if (m.tx) (byTx[m.tx] ||= []).push(m);
-    const steps = {};
-    for (const m of moves){
-      const pr = ethSymPricing(m.sym); if (!pr || pr.stable) continue;
-      let cost = null;
-      if (m.dq > 0){
-        // Bought in a swap: cost is what left the wallet in the same transaction
-        const same = m.tx ? byTx[m.tx] : [];
-        const outs = same.filter(x => x.dq < 0 && x.sym !== m.sym), ins = same.filter(x => x.dq > 0);
-        if (outs.length && ins.length === 1){
-          let v = 0, ok = true;
-          for (const o of outs){ const p = pxOf(ethSymPricing(o.sym), m.t); if (p == null){ ok = false; break; } v += -o.dq * p; }
-          if (ok && v > 0) cost = v;
-        }
-        if (cost == null){ const p = pxOf(pr, m.t); if (p == null) continue; cost = m.dq * p; }
-      }
-      (steps[m.sym] ||= []).push({t:m.t, dq:m.dq, cost});
-    }
-    for (const sym in steps){
-      const id = "Ethereum|" + sym, arr = steps[sym];
-      const fn = hist.fns[id], b0 = fn ? fn(arr[0].t - 1) : 0;
-      if (b0 > 0){ const p = pxOf(ethSymPricing(sym), arr[0].t); if (p != null) arr.unshift({t:arr[0].t - 1, dq:b0, cost:b0 * p}); }
-      res[id] = avgCostRun(arr);
-    }
-  }
+  swapCosts(hist?.out?.ethMoves, ethSymPricing, "Ethereum", res);
+  swapCosts(hist?.out?.evmMoves, sym => hist?.out?.evmPricing?.[sym] || null, "HyperEVM", res);
   const fromPoints = (pts, coin) => {
     const arr = []; let prev = 0;
     for (const [t, v] of pts){
@@ -1129,6 +1227,7 @@ function computeCosts(){
     return avgCostRun(arr);
   };
   for (const id in (hist?.out?.evmPts || {})){
+    if (res[id]) continue;
     const h = snapshot.holdings.find(x => x.id === id);
     if (h && h.coin) res[id] = fromPoints(hist.out.evmPts[id], h.coin);
   }
