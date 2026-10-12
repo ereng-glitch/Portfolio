@@ -288,7 +288,7 @@ details.notes p{margin:10px 0 0; line-height:1.55; max-width:65ch}
       <p><b>Small balances</b> under $20 are grouped at the bottom of Holdings and Where it sits.</p>
       <p><b>HYPE · BTC · ETH</b> under your net worth is the same total priced in each coin at today's Hyperliquid prices. The percentage is the past 24 hours counted in that coin: green means your holdings beat it, red means it beat you. Like the 24H figure, it counts price moves only, not deposits or withdrawals.</p>
       <p><b>Realized profit</b> comes from your HyperCore spot trade history (Hyperliquid keeps your last 10,000 trades). Each sale counts the sale price minus your average buy price, after fees. Coins you hold show their total profit (realized plus unrealized), and coins you've fully sold are listed under Sold coins. Coins that arrived by transfer rather than a trade have no known cost, so selling them adds no realized profit. Perp trading profit is already in your P&amp;L above.</p>
-      <p><b>Setting your own entry price</b>: open a holding and tap Set entry price. Your price replaces the calculated average entry for that coin's profit and loss, and is marked SET. Tap Use automatic to go back. This is saved on this device only.</p>
+      <p><b>Setting your own entry price</b>: open a holding and tap Set entry price. Your price replaces the calculated average entry for that coin's profit and loss, and is marked SET. The coin's row then shows how much you're up or down from your price. Tap Use automatic to go back. This is saved on this device only.</p>
       <p><b>Hiding a coin</b>: open any holding and tap Hide, or tap × on a small balance. Hidden coins are left out of your net worth, P&amp;L and charts, and are listed under Hidden coins at the bottom of Holdings, where you can bring them back. This is saved on this device only.</p>
       <p>Data: Hyperliquid public API, HyperEVM and Ethereum public nodes, Blockscout for Ethereum history, CoinGecko for RAIL. Any ERC-20 token on Ethereum is found automatically. Listed coins are priced by CoinGecko, and DEX-only coins by GeckoTerminal when they have at least $20k of liquidity. Airdropped spam without real liquidity is hidden. On HyperEVM, every token that trades on HyperCore is checked, plus WHYPE, kHYPE and any other token Blockscout (hyperscan.com) finds in your wallet. Past HyperEVM balances come from your Blockscout transfer history, so buys and sells show at the exact time, including coins you've since sold. If a token's transfers don't add up to today's balance, its past is read from the chain once a day instead.</p>
     </details>
@@ -1776,7 +1776,12 @@ function holdingRow(h, compact, isHidden){
   const v = document.createElement("span"); v.className = "v"; v.textContent = h.unpriced ? "no price" : fmtUsd(h.value);
   const p = h.prev > 0 ? (h.px - h.prev) / h.prev * 100 : 0;
   const c = document.createElement("span");
-  if (holdMode === "pnl" && !h.stable && !h.isMargin && Math.abs(h.realized || 0) >= 0.5){
+  if (holdMode === "pnl" && cf && cf.manual){
+    // You set this price yourself: show how far above or below it you are
+    c.className = "c " + dirT(cf.upnl);
+    c.textContent = fmtSignedCompact(cf.upnl) + " " + fmtPctShort(cf.pct);
+    c.title = "vs. your price " + fmtPrice(cf.avg) + (Math.abs(h.realized || 0) >= 0.5 ? " · " + fmtSignedCompact(h.realized) + " realized from past sales not included" : "");
+  } else if (holdMode === "pnl" && !h.stable && !h.isMargin && Math.abs(h.realized || 0) >= 0.5){
     const tot = (cf ? cf.upnl : 0) + h.realized;
     c.className = "c " + dirT(tot);
     c.textContent = fmtSignedCompact(tot) + (cf ? " total" : " sold");
@@ -1891,7 +1896,7 @@ function renderDetail(box, h){
     stat("Price", fmtPrice(h.px)); stat("24h", fmtPct(d1), dirT(d1)); stat("7d", fmtPct(d7), dirT(d7)); stat("30d", fmtPct(d30), dirT(d30));
     stats2.innerHTML = "";
     const stat2 = (k, v, cls) => { const s = document.createElement("div"); s.className = "stat"; s.innerHTML = '<span class="k"></span><span class="v"></span>'; s.firstChild.textContent = k; s.lastChild.textContent = v; if (cls) s.lastChild.classList.add(cls); stats2.appendChild(s); };
-    if (cf){ stat2("Avg entry", fmtPrice(cf.avg)); stat2("Cost", fmtCompact(cf.cost)); stat2("Unrealized", fmtSignedCompact(cf.upnl), dirT(cf.upnl)); stat2("Return", fmtPct(cf.pct), dirT(cf.pct)); }
+    if (cf){ stat2("Avg entry", fmtPrice(cf.avg)); stat2("Cost", fmtCompact(cf.cost)); stat2(cf.manual ? "vs. your price" : "Unrealized", fmtSignedCompact(cf.upnl), dirT(cf.upnl)); stat2("Return", fmtPct(cf.pct), dirT(cf.pct)); }
     else { const n = document.createElement("div"); n.className = "sub"; n.style.gridColumn = "1 / -1"; n.textContent = "Entry price isn't known for this balance yet."; stats2.appendChild(n); }
     const rz = h.realized || 0;
     if (Math.abs(rz) >= 0.5){
