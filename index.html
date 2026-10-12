@@ -58,6 +58,9 @@ button{font:inherit; color:inherit; -webkit-tap-highlight-color:transparent}
 .eyebrow{font-size:11.5px; text-transform:uppercase; letter-spacing:.09em; color:var(--muted); font-weight:600}
 .total{font-weight:600; font-size:clamp(40px, 12vw, 54px); letter-spacing:-.035em; line-height:1; font-variant-numeric:tabular-nums}
 .total .cents{color:var(--muted); font-size:.5em; letter-spacing:-.01em}
+.denom{display:flex; flex-wrap:wrap; gap:6px; margin-top:-2px}
+.denom span{font-family:var(--mono); font-size:13px; color:var(--ink-2); background:var(--surface); border:1px solid var(--line); border-radius:8px; padding:3px 9px; white-space:nowrap}
+.denom b{font-weight:500; color:var(--ink)}
 .pnl-strip{display:grid; grid-template-columns:repeat(3, 1fr); background:var(--surface); border:1px solid var(--line); border-radius:14px; overflow:hidden}
 .pnl-cell{padding:10px 12px; display:flex; flex-direction:column; gap:2px; min-width:0}
 .pnl-cell + .pnl-cell{border-left:1px solid var(--line)}
@@ -223,6 +226,7 @@ details.notes p{margin:10px 0 0; line-height:1.55; max-width:65ch}
     <section class="hero" aria-live="polite">
       <div class="eyebrow">Net worth</div>
       <div class="total" id="total"><span class="skel" style="display:inline-block;width:230px;height:48px"></span></div>
+      <div class="denom" id="denom" aria-label="Net worth in other coins"></div>
       <div class="pnl-strip" id="pnlStrip">
         <div class="pnl-cell"><span class="k">24H</span><span class="v skel" style="height:18px;width:80%"></span><span class="p">&nbsp;</span></div>
         <div class="pnl-cell"><span class="k">7D</span><span class="v skel" style="height:18px;width:80%"></span><span class="p">&nbsp;</span></div>
@@ -281,6 +285,7 @@ details.notes p{margin:10px 0 0; line-height:1.55; max-width:65ch}
       <p><b>Value</b> uses Hyperliquid's account history for HyperCore, merged down to its finest detail. Transfers are placed at the exact minute from your transfer log, so money in transit isn't counted twice. Staked HYPE, HyperEVM and Ethereum balances are rebuilt from your transaction history and priced at each moment.</p>
       <p><b>Average entry</b> for HyperCore spot is Hyperliquid's own cost basis. Tokens moved in from elsewhere count at the price when they arrived. Ethereum tokens use what you paid in the same transaction, or the market price when they arrived. HyperEVM tokens use what you paid in the same transaction, like Ethereum. Staked HYPE uses the price when the balance went up. Sales lower the cost in proportion, so the average entry stays the same.</p>
       <p><b>Small balances</b> under $20 are grouped at the bottom of Holdings and Where it sits.</p>
+      <p><b>HYPE · BTC · ETH</b> under your net worth is the same total priced in each coin at today's Hyperliquid prices.</p>
       <p><b>Realized profit</b> comes from your HyperCore spot trade history (Hyperliquid keeps your last 10,000 trades). Each sale counts the sale price minus your average buy price, after fees. Coins you hold show their total profit (realized plus unrealized), and coins you've fully sold are listed under Sold coins. Coins that arrived by transfer rather than a trade have no known cost, so selling them adds no realized profit. Perp trading profit is already in your P&amp;L above.</p>
       <p><b>Setting your own entry price</b>: open a holding and tap Set entry price. Your price replaces the calculated average entry for that coin's profit and loss, and is marked SET. Tap Use automatic to go back. This is saved on this device only.</p>
       <p><b>Hiding a coin</b>: open any holding and tap Hide, or tap × on a small balance. Hidden coins are left out of your net worth, P&amp;L and charts, and are listed under Hidden coins at the bottom of Holdings, where you can bring them back. This is saved on this device only.</p>
@@ -1394,7 +1399,23 @@ function renderTotal(){
   const e = $("total"); e.innerHTML = "";
   const w = document.createElement("span"); w.textContent = usd0.format(whole); e.appendChild(w);
   if (total < 1e5){ const c = document.createElement("span"); c.className = "cents"; c.textContent = "." + cents; e.appendChild(c); }
+  renderDenom();
   $("dot").classList.remove("stale");
+}
+// Net worth priced in HYPE, BTC and ETH at today's prices
+function renderDenom(){
+  const d = $("denom"); d.innerHTML = "";
+  const hs = market?.tokenPx?.[market.hypeIdx];
+  const px = {HYPE: market?.perpPx?.HYPE?.px || hs?.px, BTC: market?.perpPx?.BTC?.px, ETH: market?.perpPx?.ETH?.px};
+  const fmt = v => v.toLocaleString("en-US", {maximumFractionDigits: v >= 1000 ? 0 : v >= 100 ? 1 : v >= 10 ? 2 : v >= 1 ? 3 : 4});
+  for (const k of ["HYPE", "BTC", "ETH"]){
+    const p = px[k]; if (!(p > 0) || !(snapshot.total > 0)) continue;
+    const s = document.createElement("span");
+    const b = document.createElement("b"); b.textContent = fmt(snapshot.total / p);
+    s.append(b, " " + k); s.title = "At " + k + " " + fmtPrice(p);
+    d.appendChild(s);
+  }
+  d.hidden = !d.children.length;
 }
 function renderPnlStrip(){
   const strip = $("pnlStrip"); strip.innerHTML = "";
