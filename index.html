@@ -287,8 +287,8 @@ details.notes p{margin:10px 0 0; line-height:1.55; max-width:65ch}
       <p><b>Average entry</b> for HyperCore spot is Hyperliquid's own cost basis. Tokens moved in from elsewhere count at the price when they arrived. Ethereum tokens use what you paid in the same transaction, or the market price when they arrived. HyperEVM tokens use what you paid in the same transaction, like Ethereum. Staked HYPE uses the price when the balance went up. Sales lower the cost in proportion, so the average entry stays the same.</p>
       <p><b>Small balances</b> under $20 are grouped at the bottom of Holdings and Where it sits.</p>
       <p><b>HYPE · BTC · ETH</b> under your net worth is the same total priced in each coin at today's Hyperliquid prices. The percentage is the past 24 hours counted in that coin: green means your holdings beat it, red means it beat you. Like the 24H figure, it counts price moves only, not deposits or withdrawals.</p>
-      <p><b>Realized profit</b> comes from your HyperCore spot trade history (Hyperliquid keeps your last 10,000 trades). Each sale counts the sale price minus your average buy price, after fees. Coins you hold show their total profit (realized plus unrealized), and coins you've fully sold are listed under Sold coins. Coins that arrived by transfer rather than a trade have no known cost, so selling them adds no realized profit. Perp trading profit is already in your P&amp;L above.</p>
-      <p><b>Setting your own entry price</b>: open a holding and tap Set entry price. Your price replaces the calculated average entry for that coin's profit and loss, and is marked SET. The coin's row then shows how much you're up or down from your price. Tap Use automatic to go back. This is saved on this device only.</p>
+      <p><b>Realized profit</b> comes from your HyperCore spot trade history (Hyperliquid keeps your last 10,000 trades), replayed oldest first. Each sale counts the sale price minus your average cost at that moment, after fees, so take-profits count even if you sold everything and bought back later. The coins you hold now are priced at what you paid for them. Coins with no trade on record (an airdrop, a transfer in, or trades older than your history) use the price you set for that coin, or else the market price when they showed up. Coins you move to staking or HyperEVM and back keep their cost. Coins you hold show total profit (realized plus open), and coins you've fully sold are listed under Sold coins. Perp trading profit is already in your P&amp;L above.</p>
+      <p><b>Setting your own entry price</b>: open a holding and tap Set entry price. On HyperCore coins with trade history, your price is used only for coins with no trade on record, such as an airdrop or a buy older than your history. Everywhere else it replaces the calculated average entry and the row shows how much you're up or down from your price. Either way it's marked SET. Tap Use automatic to go back. This is saved on this device only.</p>
       <p><b>Hiding a coin</b>: open any holding and tap Hide, or tap × on a small balance. Hidden coins are left out of your net worth, P&amp;L and charts, and are listed under Hidden coins at the bottom of Holdings, where you can bring them back. This is saved on this device only.</p>
       <p>Data: Hyperliquid public API, HyperEVM and Ethereum public nodes, Blockscout for Ethereum history, CoinGecko for RAIL. Any ERC-20 token on Ethereum is found automatically. Listed coins are priced by CoinGecko, and DEX-only coins by GeckoTerminal when they have at least $20k of liquidity. Airdropped spam without real liquidity is hidden. On HyperEVM, every token that trades on HyperCore is checked, plus WHYPE, kHYPE and any other token Blockscout (hyperscan.com) finds in your wallet. Past HyperEVM balances come from your Blockscout transfer history, so buys and sells show at the exact time, including coins you've since sold. If a token's transfers don't add up to today's balance, its past is read from the chain once a day instead.</p>
     </details>
@@ -449,6 +449,7 @@ function setManualEntry(h, price){
   if (price > 0) entryOverrides[entryKey(h)] = price; else delete entryOverrides[entryKey(h)];
   store.setJson("entryOverrides", entryOverrides);
   editEntry = null; entryDraft = null;
+  if (hist && snapshot) try { computeCosts(); } catch {}
   renderHoldings();
 }
 // Coins you've hidden (scam airdrops etc). Saved on this device, left out of every total.
@@ -1122,29 +1123,77 @@ async function spotFills(){
   }
   return all;
 }
-function realizedFromFills(fills){
+// Full HyperCore spot ledger, oldest trade first, average-cost method.
+// Each fill carries your balance just before it (startPosition), so coins that came or went without a trade
+// (airdrop, staking, HyperEVM bridge, transfers, or trades older than your history) are caught:
+//  - coins moved out to your own places keep their cost and get it back if they return;
+//  - coins with no trade on record are counted at the price you set for that coin, or else at the
+//    market price when they showed up.
+// Each sale then realizes sale price minus average cost, after fees, so take-profits are counted
+// even when you sold everything and bought back later.
+function realizedFromFills(fills, held, basePx){
   const out = {}, M = market;
   const usdOf = idx => { const p = M.tokenPx[idx]; return !p ? 0 : p.stable ? 1 : (p.px || 0); };
   const spot = fills.filter(f => M.pairs[f.coin]).sort((a, b) => a.time - b.time || a.tid - b.tid);
+  const get = idx => out[idx] ||= {sym:M.tokens[idx]?.name || "?", q:0, c:0, realized:0, trades:0, bought:0, sold:0, parkQ:0, parkC:0, baseQ:0, mktQ:0};
+  const arrive = (idx, r, dq, mkt) => {
+    const back = Math.min(dq, r.parkQ);
+    if (back > 0){ const pc = r.parkC * back / r.parkQ; r.q += back; r.c += pc; r.parkQ -= back; r.parkC -= pc; dq -= back; }
+    if (dq <= 1e-12) return;
+    const bp = basePx(idx);
+    if (bp > 0){ r.q += dq; r.c += dq * bp; r.baseQ += dq; }
+    else { r.q += dq; r.c += dq * (mkt || 0); r.mktQ += dq; }
+  };
+  const leave = (r, dq) => {
+    const m = Math.min(dq, r.q); if (m <= 0) return;
+    const pc = r.c * m / r.q; r.q -= m; r.c -= pc; r.parkQ += m; r.parkC += pc;
+    if (r.q < 1e-12){ r.q = 0; r.c = 0; }
+  };
+  const settle = (idx, r, target, mkt) => {
+    const d = target - r.q, tol = Math.max(1e-9, 1e-6 * Math.max(r.q, target));
+    if (d > tol) arrive(idx, r, d, mkt); else if (d < -tol) leave(r, -d);
+  };
+  const sell = (idx, r, amt, proceeds, mkt) => {
+    if (amt > r.q + 1e-12) arrive(idx, r, amt - r.q, mkt); // sold more than tracked: the rest had no trade on record
+    const m = Math.min(amt, r.q); if (!(m > 0)) return;
+    const costSold = r.c * m / r.q;
+    r.realized += proceeds * (m / amt) - costSold; r.c -= costSold; r.q -= m;
+    if (r.q < 1e-9){ r.q = 0; r.c = 0; }
+  };
+  // Only trust the balance-before-trade field for a coin if it never claims you sold more than you had
+  const trust = {};
+  for (const f of spot){
+    const b = M.pairs[f.coin][0], sp = parseFloat(f.startPosition);
+    if (trust[b] === false) continue;
+    if (!isFinite(sp) || sp < -1e-9 || (f.side === "A" && sp + 1e-9 < +f.sz * 0.999)) trust[b] = false; else trust[b] = true;
+  }
   for (const f of spot){
     const [base, quote] = M.pairs[f.coin], bt = M.tokens[base]; if (!bt) continue;
-    const qp = M.tokenPx[quote], qv = !qp ? 1 : qp.stable ? 1 : (priceAt(spotCoin(quote), +f.time) ?? qp.px ?? 0);
-    const px = +f.px * qv, sz = +f.sz, fee = +f.fee || 0, bfee = +f.builderFee || 0;
+    const qp = M.tokenPx[quote], qStable = !qp || qp.stable;
+    const qv = qStable ? 1 : (priceAt(spotCoin(quote), +f.time) ?? qp.px ?? 0);
+    const raw = +f.px, px = raw * qv, sz = +f.sz, fee = +f.fee || 0, bfee = +f.builderFee || 0;
     if (!(sz > 0) || !(px > 0)) continue;
+    const r = get(base);
+    if (trust[base]) settle(base, r, parseFloat(f.startPosition), px);
     const feeInBase = f.feeToken === bt.name;
-    const feeUsd = (feeInBase ? 0 : (f.feeToken ? fee * usdOf(M.byName[f.feeToken]?.index) : 0)) + bfee * (qp?.stable ? 1 : qv);
-    const r = out[base] ||= {sym:bt.name, q:0, c:0, realized:0, trades:0, bought:0, sold:0};
+    const feeUsd = (feeInBase ? 0 : (f.feeToken ? fee * usdOf(M.byName[f.feeToken]?.index) : 0)) + bfee * qv;
     r.trades++;
     if (f.side === "B"){
       r.q += sz - (feeInBase ? fee : 0); r.c += sz * px + feeUsd; r.bought += sz * px;
     } else {
-      const sold = sz + (feeInBase ? fee : 0), proceeds = sz * px - feeUsd - (feeInBase ? fee * px : 0);
+      const amt = sz + (feeInBase ? fee : 0);
       r.sold += sz * px;
-      const m = Math.min(sold, Math.max(0, r.q));
-      if (m > 0){ const costSold = r.c * m / r.q; r.realized += proceeds * (m / sold) - costSold; r.c -= costSold; r.q -= m; if (r.q < 1e-9){ r.q = 0; r.c = 0; } }
-      // anything sold beyond what these fills bought came from transfers or older trades; its cost isn't known, so no profit is counted for it
+      sell(base, r, amt, sz * px - feeUsd - (feeInBase ? fee * px : 0), px);
+    }
+    // Paying with (or receiving) a non-dollar coin is a sale (or buy) of that coin too
+    if (!qStable && quote !== 0 && M.tokens[quote]){
+      const rq = get(quote), qamt = raw * sz;
+      if (f.side === "B") sell(quote, rq, qamt, qamt * qv, qv);
+      else { rq.q += qamt; rq.c += qamt * qv; }
     }
   }
+  // Line each coin up with what you hold on HyperCore today
+  for (const idx in out){ const r = out[idx]; settle(+idx, r, held[idx] || 0, usdOf(+idx)); }
   return out;
 }
 async function stakeHistory(fns, extras, out){
@@ -1287,12 +1336,19 @@ function computeCosts(){
       res[h.id] = fromPoints(pts, h.coin);
     }
   }
-  const realized = hist?.out?.fills ? realizedFromFills(hist.out.fills) : null;
+  const coreHeld = {};
+  for (const h of snapshot.holdings.concat(snapshot.hiddenHoldings || [])) if (h.loc === "Core spot" && h.tok != null) coreHeld[h.tok] = (coreHeld[h.tok] || 0) + h.amt;
+  const basePx = idx => { const t = market.tokens[idx]; if (!t) return null; const v = entryOverrides[(ADDR || "") + "|core spot|" + t.name.toLowerCase()]; return v > 0 ? v : null; };
+  const realized = hist?.out?.fills ? realizedFromFills(hist.out.fills, coreHeld, basePx) : null;
   if (hist) hist.realized = realized;
-  for (const h of snapshot.holdings) h.realized = realized && h.loc === "Core spot" && realized[h.tok] ? realized[h.tok].realized : 0;
+  for (const h of snapshot.holdings){
+    const r = realized && h.loc === "Core spot" ? realized[h.tok] : null;
+    h.ledger = r || null; h.realized = r ? r.realized : 0;
+  }
   for (const h of snapshot.holdings){
     if (h.stable || h.isMargin || h.unpriced){ h.cost = null; continue; }
     if (h.loc !== "Core spot"){ const r = res[h.id]; h.cost = r && r.q > 0 && r.c > 0 ? r.c / r.q * h.amt : null; }
+    else if (h.ledger && h.ledger.q > 0 && h.ledger.c > 0) h.cost = h.ledger.c / h.ledger.q * h.amt;
   }
 }
 // Realized profit on HyperCore coins you no longer hold (hidden coins left out)
@@ -1305,7 +1361,7 @@ function closedPositions(){
 }
 function costFields(h){
   if (!(h.amt > 0) || h.stable || h.isMargin) return null;
-  const m = manualEntry(h);
+  const m = h.ledger ? null : manualEntry(h);
   const cost = m ? m * h.amt : h.cost;
   if (!(cost > 0)) return null;
   const upnl = h.value - cost, realized = h.realized || 0;
@@ -1770,7 +1826,11 @@ function holdingRow(h, compact, isHidden){
   const amt = document.createElement("span"); amt.className = "hamt";
   const pnlMode = holdMode === "pnl";
   amt.textContent = h.isMargin ? (h.loc === "Perps margin" ? "Incl. unrealized PnL" : "Vault equity") : fmtAmt(h.amt) + (pnlMode && cf ? " · avg " + fmtPrice(cf.avg) : " " + h.sym);
-  if (pnlMode && cf && cf.manual){ const mk = document.createElement("span"); mk.className = "manual"; mk.textContent = "SET"; mk.title = "Average entry set by you"; amt.appendChild(mk); }
+  if (pnlMode && cf && (cf.manual || (h.ledger && h.ledger.baseQ > 0))){
+    const mk = document.createElement("span"); mk.className = "manual"; mk.textContent = "SET";
+    mk.title = cf.manual ? "Average entry set by you" : "Includes coins with no trade on record, counted at your price " + fmtPrice(manualEntry(h));
+    amt.appendChild(mk);
+  }
   main.append(sym, amt);
   const val = document.createElement("span"); val.className = "hval";
   const v = document.createElement("span"); v.className = "v"; v.textContent = h.unpriced ? "no price" : fmtUsd(h.value);
@@ -1819,9 +1879,9 @@ function holdingRow(h, compact, isHidden){
       const cur = costFields(h), man = manualEntry(h);
       if (editEntry === h.id){
         const f = document.createElement("form"); f.className = "entry-edit";
-        const lb = document.createElement("label"); lb.textContent = "Avg entry $";
+        const lb = document.createElement("label"); lb.textContent = h.ledger ? "Price for coins with no trade on record $" : "Avg entry $";
         const inp = document.createElement("input"); inp.type = "text"; inp.inputMode = "decimal"; inp.autocomplete = "off";
-        inp.placeholder = "e.g. 25.40"; inp.value = entryDraft != null ? entryDraft : cur ? String(+cur.avg.toPrecision(6)) : "";
+        inp.placeholder = "e.g. 25.40"; inp.value = entryDraft != null ? entryDraft : man ? String(man) : (!h.ledger && cur) ? String(+cur.avg.toPrecision(6)) : "";
         inp.addEventListener("input", () => { entryDraft = inp.value; });
         lb.htmlFor = inp.id = "entryIn"; 
         const save = document.createElement("button"); save.type = "submit"; save.className = "hide-btn primary"; save.textContent = "Save";
@@ -1907,6 +1967,19 @@ function renderDetail(box, h){
       stat3("Total profit", cf ? fmtSignedCompact(cf.upnl + rz) : "—", cf ? dirT(cf.upnl + rz) : null);
       stat3("Trades", r ? String(r.trades) : "—");
       stat3("Sold for", r ? fmtCompact(r.sold) : "—");
+    }
+    const L = h.ledger;
+    if (L && (L.baseQ > 0 || L.mktQ > 0)){
+      const n = document.createElement("div"); n.className = "sub";
+      const bp = manualEntry(h);
+      n.textContent = L.baseQ > 0
+        ? fmtAmt(L.baseQ) + " " + h.sym + " had no trade on record (airdrop, transfer or older than your trade history) and are counted at your price " + fmtPrice(bp) + ". Everything else uses what you actually paid."
+        : fmtAmt(L.mktQ) + " " + h.sym + " had no trade on record (airdrop, transfer or older than your trade history), so they're counted at the market price when they showed up. If you know what you paid, tap Set entry price.";
+      box.appendChild(n);
+    } else if (L && manualEntry(h)){
+      const n = document.createElement("div"); n.className = "sub";
+      n.textContent = "Your price " + fmtPrice(manualEntry(h)) + " isn't needed: every " + h.sym + " you've held here has a trade on record, so real prices are used.";
+      box.appendChild(n);
     }
   }).catch(() => { chart.innerHTML = '<div class="sub">Couldn\'t load price history. Try again in a minute.</div>'; });
 }
