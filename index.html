@@ -290,7 +290,7 @@ details.notes p{margin:10px 0 0; line-height:1.55; max-width:65ch}
       <p><b>Realized profit</b> comes from your HyperCore spot trade history (Hyperliquid keeps your last 10,000 trades), replayed oldest first. Each sale counts the sale price minus your average cost at that moment, after fees, so take-profits count even if you sold everything and bought back later. The coins you hold now are priced at what you paid for them. Coins with no trade on record (an airdrop, a transfer in, or trades older than your history) use the price you set for that coin, or else the market price when they showed up. Coins you move to staking or HyperEVM and back keep their cost. Coins you hold show total profit (realized plus open), and coins you've fully sold are listed under Sold coins. Perp trading profit is already in your P&amp;L above.</p>
       <p><b>Setting your own entry price</b>: open a holding and tap Set entry price. On HyperCore coins with trade history, your price is used only for coins with no trade on record, such as an airdrop or a buy older than your history. Everywhere else it replaces the calculated average entry and the row shows how much you're up or down from your price. Either way it's marked SET. Tap Use automatic to go back. This is saved on this device only.</p>
       <p><b>Hiding a coin</b>: open any holding and tap Hide, or tap × on a small balance. Hidden coins are left out of your net worth, P&amp;L and charts, and are listed under Hidden coins at the bottom of Holdings, where you can bring them back. This is saved on this device only.</p>
-      <p>Data: Hyperliquid public API, HyperEVM and Ethereum public nodes, Blockscout for Ethereum history, CoinGecko for RAIL. Any ERC-20 token on Ethereum is found automatically. Listed coins are priced by CoinGecko, and DEX-only coins by GeckoTerminal when they have at least $20k of liquidity. Airdropped spam without real liquidity is hidden. On HyperEVM, every token that trades on HyperCore is checked, plus WHYPE, kHYPE and any other token Blockscout (hyperscan.com) finds in your wallet. Past HyperEVM balances come from your Blockscout transfer history, so buys and sells show at the exact time, including coins you've since sold. If a token's transfers don't add up to today's balance, its past is read from the chain once a day instead.</p>
+      <p>Data: Hyperliquid public API, HyperEVM and Ethereum public nodes, Blockscout for Ethereum history, CoinGecko for RAIL. Any ERC-20 token on Ethereum is found automatically through Blockscout, and its balance is then read live from an Ethereum node so new buys and sells show right away. Listed coins are priced by CoinGecko, and DEX-only coins by GeckoTerminal when they have at least $20k of liquidity. Airdropped spam without real liquidity is hidden. On HyperEVM, every token that trades on HyperCore is checked, plus WHYPE, kHYPE and any other token Blockscout (hyperscan.com) finds in your wallet. Past HyperEVM balances come from your Blockscout transfer history, so buys and sells show at the exact time, including coins you've since sold. If a token's transfers don't add up to today's balance, its past is read from the chain once a day instead.</p>
     </details>
   </main>
 </div>
@@ -316,6 +316,21 @@ const ETH_TOKENS = [
   {sym:"ENA", addr:"0x57e114B691Db790C35207b2e685D4A43181e6061", dec:18, src:"ENA"},
   {sym:"ONDO", addr:"0xfAbA6f8e4a5E8Ab82F62fe7C39859FA577269BE3", dec:18, src:"ONDO"},
 ];
+// Ethereum tokens always checked live, on top of whatever Blockscout finds
+const ETH_SEED = [{sym:"RAIL", addr:"0xe76c6c83af64e4c60245d8c7de953df673a7a33d", dec:18}];
+// Blockscout finds which tokens you hold, but its balances can lag behind a fresh buy or sell.
+// Every token it has ever shown for this wallet (plus ETH_SEED) is re-read live from an Ethereum node.
+function mergeLiveEth(found, addrs, seen, live){
+  const byAd = Object.fromEntries(found.map(f => [f.addr, f]));
+  addrs.forEach((ad, i) => {
+    const hex = live[i]; if (hex == null || hex === "0x") return;
+    let raw; try { raw = BigInt(hex).toString(); } catch { return; }
+    if (byAd[ad]) byAd[ad].raw = raw;
+    else if (raw !== "0") found.push({addr:ad, sym:seen[ad].sym, dec:seen[ad].dec, raw, rate:0});
+  });
+  for (let k = found.length - 1; k >= 0; k--) if (found[k].raw === "0") found.splice(k, 1);
+  return found;
+}
 // HyperEVM tokens that aren't HyperCore spot tokens, checked on every full scan
 const EVM_EXTRA = [
   {sym:"WHYPE", addr:"0x5555555555555555555555555555555555555555", dec:18, asHype:true},
@@ -614,6 +629,17 @@ async function loadAccount(full){
   const staticAddr = new Set(ETH_TOKENS.map(t => t.addr.toLowerCase()));
   const found = (Array.isArray(bsRes) ? bsRes : []).filter(x => x.token && x.token.type === "ERC-20" && x.token.reputation !== "scam" && +x.value > 0 && !staticAddr.has((x.token.address_hash || x.token.address || "").toLowerCase()))
     .map(x => ({addr:(x.token.address_hash || x.token.address).toLowerCase(), sym:x.token.symbol || "?", dec:+x.token.decimals || 18, raw:x.value, rate:+x.token.exchange_rate || 0}));
+  {
+    const seenKey = "ethSeen:" + a, seen = store.json(seenKey) || {};
+    for (const t of ETH_SEED) if (!seen[t.addr]) seen[t.addr] = {sym:t.sym, dec:t.dec};
+    for (const f of found) seen[f.addr] = {sym:f.sym, dec:f.dec};
+    const addrs = Object.keys(seen).filter(ad => !staticAddr.has(ad) && !hiddenKeys.has("ethereum|" + ad)).slice(-60);
+    store.setJson(seenKey, Object.fromEntries(Object.keys(seen).slice(-60).map(ad => [ad, seen[ad]])));
+    if (ethRes && addrs.length){
+      const live = await rpcBatch(ETH_RPCS, addrs.map(ad => ({method:"eth_call", params:[{to:ad, data:balanceOfData(a)}, "latest"]}))).catch(() => null);
+      if (live) mergeLiveEth(found, addrs, seen, live);
+    }
+  }
   const evmExtraHeld = evmRes ? EVM_EXTRA.filter((x, i) => hexToNum(evmRes[1 + evmTokens.length + i], x.dec) > 0 && !x.asHype) : [];
   const evmLook = evmExtraHeld.map(x => x.addr).concat(evmFound.map(f => f.addr));
   await Promise.all([gtLookup("eth", found.map(f => f.addr)), evmLook.length ? gtLookup("hyperevm", evmLook) : null]);
