@@ -301,7 +301,7 @@ details.notes p{margin:10px 0 0; line-height:1.55; max-width:65ch}
 /* ============ config ============ */
 const HL = "https://api.hyperliquid.xyz/info";
 const HYPEREVM_RPCS = ["https://rpc.hyperliquid.xyz/evm", "https://rpc.hypurrscan.io", "https://hyperliquid.drpc.org"];
-const ETH_RPCS = ["https://ethereum-rpc.publicnode.com", "https://eth.llamarpc.com", "https://cloudflare-eth.com"];
+const ETH_RPCS = ["https://ethereum-rpc.publicnode.com", "https://eth.llamarpc.com", "https://eth.drpc.org", "https://1rpc.io/eth", "https://cloudflare-eth.com"];
 const ETH_TOKENS = [
   {sym:"USDC", addr:"0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48", dec:6, src:"stable"},
   {sym:"USDT", addr:"0xdAC17F958D2ee523a2206206994597C13D831ec7", dec:6, src:"stable"},
@@ -404,7 +404,7 @@ async function fetchJSON(url, init, ms){
   } finally { clearTimeout(tm); }
 }
 const info = body => fetchJSON(HL, {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(body)});
-const RPC_MAX = {"https://hyperliquid.drpc.org": 3};
+const RPC_MAX = {"https://hyperliquid.drpc.org": 3, "https://eth.drpc.org": 3, "https://1rpc.io/eth": 10};
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 async function rpcChunk(url, calls, a, b, out){
   const size = RPC_MAX[url] || 20;
@@ -638,6 +638,7 @@ async function loadAccount(full){
     if (ethRes && addrs.length){
       const live = await rpcBatch(ETH_RPCS, addrs.map(ad => ({method:"eth_call", params:[{to:ad, data:balanceOfData(a)}, "latest"]}))).catch(() => null);
       if (live) mergeLiveEth(found, addrs, seen, live);
+      else errors.push("Couldn't confirm your Ethereum token balances live, so RAIL and other Ethereum tokens may be a few minutes behind.");
     }
   }
   const evmExtraHeld = evmRes ? EVM_EXTRA.filter((x, i) => hexToNum(evmRes[1 + evmTokens.length + i], x.dec) > 0 && !x.asHype) : [];
