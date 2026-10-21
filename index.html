@@ -283,7 +283,7 @@ details.notes p{margin:10px 0 0; line-height:1.55; max-width:65ch}
     <details class="notes">
       <summary>How these numbers work</summary>
       <p><b>Profit and loss</b> leaves out money you deposit, withdraw or move between Hyperliquid, HyperEVM and Ethereum. HyperCore uses Hyperliquid's own P&amp;L history. Wallets and staked HYPE count only price moves on what you held at the time.</p>
-      <p><b>Value</b> uses Hyperliquid's account history for HyperCore, merged down to its finest detail. Transfers are placed at the exact minute from your transfer log, so money in transit isn't counted twice. Staked HYPE, HyperEVM and Ethereum balances are rebuilt from your transaction history and priced at each moment.</p>
+      <p><b>Value</b> uses Hyperliquid's account history for HyperCore, merged down to its finest detail. Transfers are placed at the exact minute from your transfer log, so money in transit isn't counted twice. Money that leaves Hyperliquid, Ethereum or HyperEVM and lands in another of them within 48 hours (for example through Arbitrum or a bridge) is counted as in transit until it arrives, so the chart doesn't dip in between. Staked HYPE, HyperEVM and Ethereum balances are rebuilt from your transaction history and priced at each moment.</p>
       <p><b>Average entry</b> for HyperCore spot is Hyperliquid's own cost basis. Tokens moved in from elsewhere count at the price when they arrived. Ethereum tokens use what you paid in the same transaction, or the market price when they arrived. HyperEVM tokens use what you paid in the same transaction, like Ethereum. Staked HYPE uses the price when the balance went up. Sales lower the cost in proportion, so the average entry stays the same.</p>
       <p><b>Small balances</b> under $20 are grouped at the bottom of Holdings and Where it sits.</p>
       <p><b>HYPE · BTC · ETH</b> under your net worth is the same total priced in each coin at today's Hyperliquid prices. The percentage is the past 24 hours counted in that coin: green means your holdings beat it, red means it beat you. Like the 24H figure, it counts price moves only, not deposits or withdrawals.</p>
@@ -1419,7 +1419,10 @@ function buildModel(){
   const hiddenCore = (snapshot.hiddenHoldings || []).filter(h => h.loc === "Core spot" && h.amt > 0 && (h.stable || h.coin));
   const hcVal = t => { let s = 0; for (const h of hiddenCore) s += h.stable ? h.amt : h.amt * (px(h, t) || 0); return s; };
   model.coreAt = t => Math.max(0, coreAt(t) - hcVal(t));
-  model.totalAt = t => t >= now - MIN ? snapshot.total : model.coreAt(t) + model.walletAt(t);
+  const segs = buildTransit(hist?.events, hist?.out?.ethMoves, hist?.out?.evmMoves, ethSymPricing, sym => hist?.out?.evmPricing?.[sym] || null, pxOf);
+  model.transit = segs;
+  model.transitAt = t => { let s = 0; for (const g of segs) if (t >= g.t0 && t < g.t1) s += g.usd; return s; };
+  model.totalAt = t => t >= now - MIN ? snapshot.total : model.coreAt(t) + model.walletAt(t) + model.transitAt(t);
   model.pnl = (t0, t1, step) => {
     let hc = 0;
     if (hiddenCore.length) for (let a = t0; a < t1; a += step){ const b = Math.min(t1, a + step); for (const h of hiddenCore) if (!h.stable) hc += h.amt * ((px(h, b) || 0) - (px(h, a) || 0)); }
@@ -1428,6 +1431,45 @@ function buildModel(){
   model.ranges = {}; for (const k of Object.keys(RANGES)) model.ranges[k] = buildRange(k);
   model.days = buildDays();
   computeCosts();
+}
+// Money in transit between places this app tracks, e.g. a Hyperliquid withdrawal that goes through Arbitrum
+// and a bridge and lands on Ethereum an hour later. Each departure is matched to arrivals somewhere else
+// within 48 hours and counted as "in transit" until it lands, so the chart doesn't show a fake drop.
+// Swaps aren't arrivals or departures (something else moved in the same transaction).
+function buildTransit(events, ethMoves, evmMoves, ethPricingOf, evmPricingOf, pxAt){
+  const TW = 48*HOUR, deps = [], arrs = [];
+  for (const e of (events || [])) if (e.kind === "ext" && e.usd)
+    (e.usd < 0 ? deps : arrs).push({t:e.t, usd:Math.abs(e.usd), place:"core"});
+  const bridged = (events || []).filter(e => e.kind === "evm").map(e => e.t);
+  const fromMoves = (moves, place, pricingOf) => {
+    if (!moves) return;
+    const byTx = {}; for (const m of moves) if (m.tx) (byTx[m.tx] ||= []).push(m);
+    for (const m of moves){
+      const same = m.tx ? byTx[m.tx] : [m];
+      if (same.some(x => x.sym !== m.sym && Math.sign(x.dq) === -Math.sign(m.dq))) continue;
+      if (place === "evm" && bridged.some(t => Math.abs(t - m.t) < 10*MIN)) continue; // HyperCore <-> HyperEVM is already exact
+      const p = pxAt(pricingOf(m.sym), m.t); if (p == null) continue;
+      const usd = Math.abs(m.dq) * p; if (usd < 20) continue;
+      (m.dq < 0 ? deps : arrs).push({t:m.t, usd, place});
+    }
+  };
+  fromMoves(ethMoves, "eth", ethPricingOf);
+  fromMoves(evmMoves, "evm", evmPricingOf);
+  deps.sort((a, b) => a.t - b.t); arrs.sort((a, b) => a.t - b.t);
+  for (const a of arrs) a.left = a.usd;
+  const segs = [];
+  for (const d of deps){
+    let rem = d.usd; const got = [];
+    for (const a of arrs){
+      if (rem <= 0.01) break;
+      if (a.t <= d.t || a.t > d.t + TW || a.place === d.place || !(a.left > 0.01)) continue;
+      const m = Math.min(rem, a.left); got.push([a, m]); rem -= m;
+    }
+    const matched = d.usd - rem;
+    if (matched < 0.5 * d.usd) continue; // not clearly the same money: leave it as a real withdrawal
+    for (const [a, m] of got){ a.left -= m; segs.push({t0:d.t, t1:a.t, usd:m}); }
+  }
+  return segs;
 }
 function markerEvents(t0, t1){
   const evs = (hist?.events || []).filter(e => e.kind === "ext" && e.t >= t0 && e.t <= t1 && e.usd);
@@ -1446,7 +1488,7 @@ function buildRange(key){
   const step = cfg.step || (span <= 14*DAY ? HOUR : span <= 120*DAY ? 4*HOUR : DAY);
   start = Math.ceil(start / step) * step;
   const pts = [];
-  for (let t = start; t < now - step/4; t += step){ const core = model.coreAt(t), wallet = model.walletAt(t); pts.push({t, core, wallet, v:core + wallet}); }
+  for (let t = start; t < now - step/4; t += step){ const core = model.coreAt(t), wallet = model.walletAt(t), transit = model.transitAt(t); pts.push({t, core, wallet, transit, v:core + wallet + transit}); }
   pts.push({t:now, core:snapshot.coreNow, wallet:snapshot.total - snapshot.coreNow, v:snapshot.total, now:true});
   const t0 = pts[0].t, startV = pts[0].v, endV = snapshot.total;
   const pnl = model.pnl(t0, now, Math.min(step, 4*HOUR));
@@ -1626,7 +1668,7 @@ function renderRange(){
   lineChart($("chartBox"), r.pts, {
     color: r.pnl >= 0 ? "var(--up)" : "var(--down)", label:`Net worth, ${range}`, xfmt: xfmtFor(range), markers: r.markers,
     tip: (p, i, data) => {
-      const rows = [["Hyperliquid", fmtCompact(p.core)], ["Wallets & staking", fmtCompact(p.wallet)]];
+      const rows = [["Hyperliquid", fmtCompact(p.core)], ["Wallets & staking", fmtCompact(p.wallet)]].concat(p.transit > 0 ? [["In transit", fmtCompact(p.transit)]] : []);
       const prevT = i > 0 ? data[i-1].t : p.t - 1;
       for (const m of r.markers) if (m.t > prevT && m.t <= p.t) rows.push([m.usd > 0 ? "Moved in" : "Moved out", fmtSignedCompact(m.usd), "ev"]);
       return {title: tipDate(p.t, range, p.now), main: fmtUsd(p.v), rows};
