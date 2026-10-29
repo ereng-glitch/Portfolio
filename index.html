@@ -286,6 +286,7 @@ details.notes p{margin:10px 0 0; line-height:1.55; max-width:65ch}
       <p><b>Value</b> uses Hyperliquid's account history for HyperCore, merged down to its finest detail. Transfers are placed at the exact minute from your transfer log, so money in transit isn't counted twice. Money that leaves Hyperliquid, Ethereum or HyperEVM and lands in another of them within 48 hours (for example through Arbitrum or a bridge) is counted as in transit until it arrives, so the chart doesn't dip in between. Staked HYPE, HyperEVM and Ethereum balances are rebuilt from your transaction history and priced at each moment.</p>
       <p><b>Average entry</b> for HyperCore spot is Hyperliquid's own cost basis. Tokens moved in from elsewhere count at the price when they arrived. Ethereum tokens use what you paid in the same transaction, or the market price when they arrived. HyperEVM tokens use what you paid in the same transaction, like Ethereum. Staked HYPE uses the price when the balance went up. Sales lower the cost in proportion, so the average entry stays the same.</p>
       <p><b>Small balances</b> under $20 are grouped at the bottom of Holdings and Where it sits.</p>
+      <p><b>Hyperliquid lending</b>: coins you supply on HyperCore are listed as Supplied with the rate they earn, and stay in your net worth. Anything you borrow is listed as Borrowed and taken off your net worth, since it's owed. Where it sits shows what you own, with the borrow listed separately. The health factor and status come straight from Hyperliquid.</p>
       <p><b>HYPE · BTC · ETH</b> under your net worth is the same total priced in each coin at today's Hyperliquid prices. The percentage is the past 24 hours counted in that coin: green means your holdings beat it, red means it beat you. Like the 24H figure, it counts price moves only, not deposits or withdrawals.</p>
       <p><b>Realized profit</b> comes from your HyperCore spot trade history (Hyperliquid keeps your last 10,000 trades), replayed oldest first. Each sale counts the sale price minus your average cost at that moment, after fees, so take-profits count even if you sold everything and bought back later. The coins you hold now are priced at what you paid for them. Coins with no trade on record (an airdrop, a transfer in, or trades older than your history) use the price you set for that coin, or else the market price when they showed up. Coins you move to staking or HyperEVM and back keep their cost. Coins you hold show total profit (realized plus open), and coins you've fully sold are listed under Sold coins. Perp trading profit is already in your P&amp;L above.</p>
       <p><b>Setting your own entry price</b>: open a holding and tap Set entry price. On HyperCore coins with trade history, your price is used only for coins with no trade on record, such as an airdrop or a buy older than your history. Everywhere else it replaces the calculated average entry and the row shows how much you're up or down from your price. Either way it's marked SET. Tap Use automatic to go back. This is saved on this device only.</p>
@@ -339,10 +340,10 @@ const EVM_EXTRA = [
 const GT = "https://api.geckoterminal.com/api/v2";
 const HS = "https://www.hyperscan.com/api/v2/addresses/"; // Blockscout for HyperEVM (same API as eth.blockscout.com)
 const MIN_LIQ = 20000; // DEX-only tokens need this much liquidity to be priced (filters spam airdrops)
-const LOCS = {"Core spot":"var(--c1)", "Perps margin":"var(--c2)", "Vaults":"var(--c3)", "Staked HYPE":"var(--c4)", "HyperEVM":"var(--c5)", "Ethereum":"var(--c6)"};
-const LOC_SHORT = {"Core spot":"Core", "Perps margin":"Perps", "Vaults":"Vault", "Staked HYPE":"Staked", "HyperEVM":"EVM", "Ethereum":"Eth"};
+const LOCS = {"Core spot":"var(--c1)", "Perps margin":"var(--c2)", "Vaults":"var(--c3)", "Staked HYPE":"var(--c4)", "HyperEVM":"var(--c5)", "Ethereum":"var(--c6)", "Supplied":"var(--up)", "Borrowed":"var(--down)"};
+const LOC_SHORT = {"Core spot":"Core", "Perps margin":"Perps", "Vaults":"Vault", "Staked HYPE":"Staked", "HyperEVM":"EVM", "Ethereum":"Eth", "Supplied":"Supplied", "Borrowed":"Borrowed"};
 const SLOTS = ["var(--c1)", "var(--c2)", "var(--c3)", "var(--c4)", "var(--c5)", "var(--c6)"];
-const CORE_LOCS = new Set(["Core spot", "Perps margin", "Vaults"]);
+const CORE_LOCS = new Set(["Core spot", "Perps margin", "Vaults", "Supplied", "Borrowed"]);
 const SMALL = 20;
 const MIN = 60e3, HOUR = 36e5, DAY = 864e5;
 const RANGES = {
@@ -578,6 +579,40 @@ function ethTokenPricing(tk){
 }
 
 /* ============ account (current balances) ============ */
+// HyperCore borrow/lend: split your spot balances into what's free, what's supplied, and what's borrowed.
+// borrowLendUserState gives each token's supply and borrow (value = amount now, with interest).
+// Supplied coins are counted once: if Hyperliquid also lists them inside your spot balance ("supplied"
+// field matching), they're taken out of the spot row. A borrow shown as a negative spot balance is moved
+// to its own row; otherwise the debt is added as a negative row so net worth goes down by what you owe.
+function splitLending(balances, lend, reserves, tokens){
+  const num = x => { const v = parseFloat(x); return isFinite(v) ? v : 0; };
+  const st = {}; for (const [i, x] of (lend?.tokenToState || [])) st[+i] = {S:num(x?.supply?.value ?? x?.supply?.basis), B:num(x?.borrow?.value ?? x?.borrow?.basis)};
+  const rv = {}; for (const [i, r] of (reserves || [])) rv[+i] = r || {};
+  const rate = (i, k) => { const v = parseFloat(rv[i]?.[k]); return isFinite(v) ? v * 100 : null; };
+  const spot = [], supplied = [], borrowed = [], seen = new Set();
+  for (const b of (balances || [])){
+    const i = +b.token; seen.add(i);
+    const total = num(b.total); let amt = total; const L = st[i] || {S:0, B:0};
+    if (L.S > 0){
+      const sf = b.supplied != null ? num(b.supplied) : null;
+      if (sf != null && Math.abs(sf - L.S) <= Math.max(1e-9, 0.02 * L.S) && amt >= sf * 0.98) amt -= L.S;
+      supplied.push({token:i, coin:b.coin, amt:L.S, apy:rate(i, "supplyYearlyRate"), oraclePx:num(rv[i]?.oraclePx)});
+    }
+    if (L.B > 0){
+      if (amt < -0.5 * L.B) amt += L.B;
+      borrowed.push({token:i, coin:b.coin, amt:L.B, apy:rate(i, "borrowYearlyRate"), oraclePx:num(rv[i]?.oraclePx)});
+    }
+    if (Math.abs(amt) > Math.max(1e-9, 1e-6 * (L.S + L.B))) spot.push({...b, total:String(amt), share: total > 0 ? Math.max(0, amt) / total : 1});
+  }
+  for (const k in st){
+    const i = +k; if (seen.has(i)) continue;
+    const name = tokens?.[i]?.name || ("#" + i), L = st[i];
+    if (L.S > 0) supplied.push({token:i, coin:name, amt:L.S, apy:rate(i, "supplyYearlyRate"), oraclePx:num(rv[i]?.oraclePx)});
+    if (L.B > 0) borrowed.push({token:i, coin:name, amt:L.B, apy:rate(i, "borrowYearlyRate"), oraclePx:num(rv[i]?.oraclePx)});
+  }
+  const hf = parseFloat(lend?.healthFactor);
+  return {spot, supplied, borrowed, health: lend?.health || null, healthFactor: isFinite(hf) ? hf : null};
+}
 async function loadAccount(full){
   const a = ADDR, errors = [];
   const hl = Promise.all([
@@ -586,6 +621,8 @@ async function loadAccount(full){
     info({type:"delegatorSummary", user:a}).catch(() => null),
     info({type:"userVaultEquities", user:a}).catch(() => []),
     info({type:"portfolio", user:a}).catch(() => null),
+    info({type:"borrowLendUserState", user:a}).catch(() => null),
+    info({type:"allBorrowLendReserveStates"}).catch(() => null),
   ]);
   // HIP-3 perp exchanges: scan all every 15 minutes, otherwise only the ones you use
   const dexFull = full || !dexScan || dexScan.addr !== a || Date.now() - dexScan.at > 15*MIN;
@@ -619,7 +656,10 @@ async function loadAccount(full){
   const bsTokens = fetchJSON("https://eth.blockscout.com/api/v2/addresses/" + a + "/token-balances", null, 15000)
     .catch(() => { errors.push("Couldn't check Ethereum for less common tokens right now, so only major ones are shown."); return null; });
   const evmBsTokens = fetchJSON(HS + a + "/token-balances", null, 15000).catch(() => null);
-  const [[ch, spot, deleg, vaults, portfolio], evmRes, ethRes, bsRes, evmBsRes] = await Promise.all([hl, evm, eth, bsTokens, evmBsTokens]);
+  const [[ch, spot, deleg, vaults, portfolio, lendState, reserves], evmRes, ethRes, bsRes, evmBsRes] = await Promise.all([hl, evm, eth, bsTokens, evmBsTokens]);
+  const lend = splitLending(spot?.balances, lendState, reserves, market.tokens);
+  if (lend.borrowed.length && lend.health && lend.health !== "healthy")
+    errors.push("Your Hyperliquid borrow is " + ({atRisk:"at risk", marketLiquidatable:"being liquidated", backstopLiquidatable:"being liquidated by the backstop"}[lend.health] || lend.health) + ". Check it on Hyperliquid.");
   // Any other ERC-20 you hold on HyperEVM (tokens that don't trade on HyperCore)
   const evmKnown = new Set(EVM_EXTRA.map(x => x.addr.toLowerCase()));
   for (const t of Object.values(market.tokens)) if (t.evmContract?.address) evmKnown.add(t.evmContract.address.toLowerCase());
@@ -652,11 +692,21 @@ async function loadAccount(full){
     if (h.value == null){ h.value = h.amt * (h.px || 0); h.prevValue = h.amt * (h.prev || h.px || 0); }
     holdings.push(h);
   };
-  for (const b of (spot?.balances || [])){
+  for (const b of lend.spot){
     const amt = +b.total; if (!amt) continue;
     const p = market.tokenPx[b.token];
-    const entry = +b.entryNtl || 0;
-    add({sym:b.coin, tok:b.token, loc:"Core spot", amt, px:p?.px || 0, prev:p?.prev || p?.px || 0, unpriced:!p, stable:!!p?.stable, coin: p?.stable ? null : spotCoin(b.token), cost: !p?.stable && entry > 0 ? entry : null});
+    const entry = (+b.entryNtl || 0) * (b.share ?? 1);
+    add({sym:b.coin, tok:b.token, loc:"Core spot", amt, px:p?.px || 0, prev:p?.prev || p?.px || 0, unpriced:!p, stable:!!p?.stable, coin: p?.stable ? null : spotCoin(b.token), cost: !p?.stable && entry > 0 && amt > 0 ? entry : null});
+  }
+  // Supplied coins earn interest; borrowed coins are debt, so their value is negative
+  for (const x of lend.supplied){
+    const p = market.tokenPx[x.token], px = p?.px || x.oraclePx || 0;
+    const sb = (spot?.balances || []).find(b => +b.token === x.token), entry = sb && +sb.total > 0 ? (+sb.entryNtl || 0) * Math.min(1, x.amt / +sb.total) : 0;
+    add({sym:x.coin, tok:x.token, loc:"Supplied", amt:x.amt, px, prev:p?.prev || px, unpriced:!(px > 0), stable:!!p?.stable, coin: p?.stable ? null : spotCoin(x.token), cost: !p?.stable && entry > 0 ? entry : null, lend:{kind:"supply", apy:x.apy}});
+  }
+  for (const x of lend.borrowed){
+    const p = market.tokenPx[x.token], px = p?.px || x.oraclePx || 0;
+    add({sym:x.coin, tok:x.token, loc:"Borrowed", amt:-x.amt, px, prev:p?.prev || px, unpriced:!(px > 0), stable:!!p?.stable, coin: p?.stable ? null : spotCoin(x.token), lend:{kind:"borrow", apy:x.apy}});
   }
   const acct = +(ch?.marginSummary?.accountValue || 0);
   const positions = []; let perpDay = 0;
@@ -737,7 +787,7 @@ async function loadAccount(full){
   if (addedIds) saveHidden();
   const shown = holdings.filter(h => !hiddenHoldings.includes(h));
   const pmap = {}; if (Array.isArray(portfolio)) for (const [k, v] of portfolio) pmap[k] = v;
-  const snap = {holdings:shown, hiddenHoldings, positions, portfolio:pmap, errors, ethOk:!!ethRes, evmOk:!!evmRes, at:Date.now(), hidden, ethFound:ethFound.filter(f => !hiddenKeys.has(("Ethereum|" + f.addr).toLowerCase()))};
+  const snap = {lend:{health:lend.health, healthFactor:lend.healthFactor, any: lend.supplied.length + lend.borrowed.length > 0}, holdings:shown, hiddenHoldings, positions, portfolio:pmap, errors, ethOk:!!ethRes, evmOk:!!evmRes, at:Date.now(), hidden, ethFound:ethFound.filter(f => !hiddenKeys.has(("Ethereum|" + f.addr).toLowerCase()))};
   sumSnapshot(snap);
   return snap;
 }
@@ -1364,18 +1414,23 @@ function computeCosts(){
     }
   }
   const coreHeld = {};
-  for (const h of snapshot.holdings.concat(snapshot.hiddenHoldings || [])) if (h.loc === "Core spot" && h.tok != null) coreHeld[h.tok] = (coreHeld[h.tok] || 0) + h.amt;
+  for (const h of snapshot.holdings.concat(snapshot.hiddenHoldings || [])) if ((h.loc === "Core spot" || h.loc === "Supplied") && h.tok != null && h.amt > 0) coreHeld[h.tok] = (coreHeld[h.tok] || 0) + h.amt;
   const basePx = idx => { const t = market.tokens[idx]; if (!t) return null; const v = entryOverrides[(ADDR || "") + "|core spot|" + t.name.toLowerCase()]; return v > 0 ? v : null; };
   const realized = hist?.out?.fills ? realizedFromFills(hist.out.fills, coreHeld, basePx) : null;
   if (hist) hist.realized = realized;
+  const spotToks = new Set(snapshot.holdings.filter(h => h.loc === "Core spot").map(h => h.tok));
   for (const h of snapshot.holdings){
-    const r = realized && h.loc === "Core spot" ? realized[h.tok] : null;
-    h.ledger = r || null; h.realized = r ? r.realized : 0;
+    const r = realized && (h.loc === "Core spot" || h.loc === "Supplied") ? realized[h.tok] : null;
+    h.ledger = r || null;
+    // realized profit is shown once per coin: on its spot row, or on its supplied row if that's all you have
+    h.realized = r && (h.loc === "Core spot" || !spotToks.has(h.tok)) ? r.realized : 0;
   }
   for (const h of snapshot.holdings){
     if (h.stable || h.isMargin || h.unpriced){ h.cost = null; continue; }
+    if (h.loc === "Borrowed"){ h.cost = null; continue; }
+    if (h.loc === "Supplied"){ if (h.ledger && h.ledger.q > 0 && h.ledger.c > 0) h.cost = h.ledger.c / h.ledger.q * h.amt; continue; }
     if (h.loc !== "Core spot"){ const r = res[h.id]; h.cost = r && r.q > 0 && r.c > 0 ? r.c / r.q * h.amt : null; }
-    else if (h.ledger && h.ledger.q > 0 && h.ledger.c > 0) h.cost = h.ledger.c / h.ledger.q * h.amt;
+    else if (h.ledger && h.ledger.q > 0 && h.ledger.c > 0 && h.amt > 0) h.cost = h.ledger.c / h.ledger.q * h.amt;
   }
 }
 // Realized profit on HyperCore coins you no longer hold (hidden coins left out)
@@ -1733,7 +1788,8 @@ function renderCalendar(){
 
 /* ============ rendering: allocation ============ */
 function renderAlloc(){
-  const tot = snapshot.total || 1, groups = {};
+  const tot = snapshot.holdings.reduce((a, h) => a + Math.max(0, h.value), 0) || 1, groups = {};
+  const owed = -snapshot.holdings.filter(h => h.value < 0).reduce((a, h) => a + h.value, 0);
   for (const h of snapshot.holdings){
     if (!(h.value > 0)) continue;
     const key = allocGroup === "place" ? h.loc : (h.isMargin ? h.loc : h.sym);
@@ -1758,6 +1814,13 @@ function renderAlloc(){
     li.children[2].textContent = fmtUsd(g.value);
     const pct = g.value / tot * 100;
     li.children[3].textContent = pct < 0.1 ? "<0.1%" : pct.toFixed(1) + "%";
+    ul.appendChild(li);
+  }
+  if (owed >= 0.5 && list.length){
+    const li = document.createElement("li");
+    li.innerHTML = '<span class="sw"></span><span class="nm"><span>Borrowed</span><small>Owed on Hyperliquid, taken off net worth</small></span><span class="num down-t"></span><span class="num pct"></span>';
+    li.children[0].style.background = "var(--down)";
+    li.children[2].textContent = "−" + fmtUsd(owed); li.children[3].textContent = "—";
     ul.appendChild(li);
   }
   if (!list.length) ul.innerHTML = '<li style="display:block" class="sub">No balances found for this address yet.</li>';
@@ -1806,8 +1869,21 @@ function renderHoldSummary(){
 function renderHoldings(){
   renderHoldSummary();
   const box = $("holdings"); box.innerHTML = "";
+  const sup = snapshot.holdings.filter(h => h.loc === "Supplied"), bor = snapshot.holdings.filter(h => h.loc === "Borrowed");
+  if (sup.length || bor.length){
+    const n = document.createElement("div"); n.className = "sub"; n.style.marginBottom = "4px";
+    const parts = [];
+    if (sup.length) parts.push("Supplied " + fmtCompact(sup.reduce((a, h) => a + h.value, 0)));
+    if (bor.length) parts.push("Borrowed " + fmtCompact(-bor.reduce((a, h) => a + h.value, 0)));
+    const L = snapshot.lend;
+    if (bor.length && L && L.healthFactor != null) parts.push("health factor " + L.healthFactor.toFixed(2));
+    if (bor.length && L && L.health) parts.push(({healthy:"healthy", atRisk:"at risk", marketLiquidatable:"liquidating", backstopLiquidatable:"liquidating"})[L.health] || L.health);
+    n.textContent = "Hyperliquid lending: " + parts.join(" · ");
+    if (L && L.health && L.health !== "healthy" && bor.length) n.className = "sub down-t";
+    box.appendChild(n);
+  }
   const all = snapshot.holdings.slice().sort((a, b) => b.value - a.value);
-  const big = all.filter(h => h.value >= SMALL), small = all.filter(h => h.value < SMALL);
+  const big = all.filter(h => Math.abs(h.value) >= SMALL), small = all.filter(h => Math.abs(h.value) < SMALL);
   for (const h of big) box.appendChild(holdingRow(h));
   if (small.length){
     const row = document.createElement("div"); row.className = "hrow small-row";
@@ -1894,7 +1970,10 @@ function holdingRow(h, compact, isHidden){
   const cf = costFields(h);
   const amt = document.createElement("span"); amt.className = "hamt";
   const pnlMode = holdMode === "pnl";
-  amt.textContent = h.isMargin ? (h.loc === "Perps margin" ? "Incl. unrealized PnL" : "Vault equity") : fmtAmt(h.amt) + (pnlMode && cf ? " · avg " + fmtPrice(cf.avg) : " " + h.sym);
+  amt.textContent = h.isMargin ? (h.loc === "Perps margin" ? "Incl. unrealized PnL" : "Vault equity")
+    : h.loc === "Borrowed" ? fmtAmt(-h.amt) + " " + h.sym + " owed"
+    : h.loc === "Supplied" && !(pnlMode && cf) ? fmtAmt(h.amt) + " " + h.sym + " supplied"
+    : fmtAmt(h.amt) + (pnlMode && cf ? " · avg " + fmtPrice(cf.avg) : " " + h.sym);
   if (pnlMode && cf && (cf.manual || (h.ledger && h.ledger.baseQ > 0))){
     const mk = document.createElement("span"); mk.className = "manual"; mk.textContent = "SET";
     mk.title = cf.manual ? "Average entry set by you" : "Includes coins with no trade on record, counted at your price " + fmtPrice(manualEntry(h));
@@ -1902,10 +1981,15 @@ function holdingRow(h, compact, isHidden){
   }
   main.append(sym, amt);
   const val = document.createElement("span"); val.className = "hval";
-  const v = document.createElement("span"); v.className = "v"; v.textContent = h.unpriced ? "no price" : fmtUsd(h.value);
+  const v = document.createElement("span"); v.className = "v" + (h.value < 0 ? " down-t" : ""); v.textContent = h.unpriced ? "no price" : fmtUsd(h.value);
   const p = h.prev > 0 ? (h.px - h.prev) / h.prev * 100 : 0;
   const c = document.createElement("span");
-  if (holdMode === "pnl" && cf && cf.manual){
+  if (h.lend && (h.loc === "Borrowed" || h.stable || !(holdMode === "pnl" && cf))){
+    const apy = h.lend.apy;
+    c.className = "c " + (h.loc === "Borrowed" ? "down-t" : "up-t");
+    c.textContent = apy == null ? (h.loc === "Borrowed" ? "borrowed" : "supplied") : (h.loc === "Borrowed" ? "pay " : "earn ") + apy.toFixed(apy < 10 ? 2 : 1) + "% APY";
+    c.title = h.loc === "Borrowed" ? "Yearly borrow rate on Hyperliquid" : "Yearly supply rate on Hyperliquid";
+  } else if (holdMode === "pnl" && cf && cf.manual){
     // You set this price yourself: show how far above or below it you are
     c.className = "c " + dirT(cf.upnl);
     c.textContent = fmtSignedCompact(cf.upnl) + " " + fmtPctShort(cf.pct);
@@ -1989,6 +2073,16 @@ function holdingRow(h, compact, isHidden){
 }
 function renderDetail(box, h){
   box.innerHTML = "";
+  if (h.lend){
+    const n = document.createElement("div"); n.className = "sub";
+    const apy = h.lend.apy != null ? h.lend.apy.toFixed(2) + "% a year" : "a variable rate";
+    const L = snapshot.lend;
+    n.textContent = h.loc === "Borrowed"
+      ? "Borrowed on Hyperliquid at " + apy + ". It's counted as debt, so it lowers your net worth by " + fmtUsd(-h.value) + "." + (L && L.healthFactor != null ? " Health factor " + L.healthFactor.toFixed(2) + (L.health ? " (" + (({healthy:"healthy", atRisk:"at risk", marketLiquidatable:"liquidating", backstopLiquidatable:"liquidating"})[L.health] || L.health) + ")" : "") + "." : "")
+      : "Supplied on Hyperliquid, earning " + apy + ". Interest is added to the amount as it accrues.";
+    box.appendChild(n);
+    if (!h.coin || h.loc === "Borrowed") return;
+  }
   if (!h.coin){
     const n = document.createElement("div"); n.className = "sub";
     n.textContent = h.isMargin ? "USDC held as margin. Its value moves with your open positions." : "Stablecoin, worth about $1.";
